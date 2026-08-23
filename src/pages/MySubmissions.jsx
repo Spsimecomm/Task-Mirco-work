@@ -70,11 +70,15 @@ export default function MySubmissions() {
                 </div>
               </div>
               <p className="text-sm text-slate-400 mt-3">{s.proof_text}</p>
-              {s.proof_url && (
+              {s.proof_url && /\.(jpe?g|png|webp|gif)$/i.test(s.proof_url) ? (
+                <a href={s.proof_url} target="_blank" rel="noreferrer" className="block mt-2">
+                  <img src={s.proof_url} alt="Proof screenshot" className="rounded-lg max-h-64 object-contain border border-base-700" />
+                </a>
+              ) : s.proof_url ? (
                 <a href={s.proof_url} target="_blank" rel="noreferrer" className="text-sm text-mint-400 hover:underline mt-1 inline-block break-all">
                   {s.proof_url}
                 </a>
-              )}
+              ) : null}
               {s.status === 'rejected' && s.rejection_reason && (
                 <div className="mt-3 rounded-lg bg-signal-rose/10 border border-signal-rose/20 px-3 py-2 text-sm text-signal-rose">
                   Rejected: {s.rejection_reason}

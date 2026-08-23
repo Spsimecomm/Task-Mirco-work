@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, ClipboardList, Users, Loader2, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ClipboardList, Users, Loader2, CheckCircle2, Upload, X, ImageIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { ErrorBanner } from '../components/Shared'
@@ -20,6 +20,10 @@ export default function TaskDetail() {
   const [loading, setLoading] = useState(true)
   const [proofText, setProofText] = useState('')
   const [proofUrl, setProofUrl] = useState('')
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -41,17 +45,63 @@ export default function TaskDetail() {
     load()
   }, [id, user])
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('Please select a valid image file (JPEG, PNG, WebP, or GIF).')
+      return
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setError('Image must be smaller than 10 MB.')
+      return
+    }
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+    setProofUrl('')
+  }
+
+  const clearImage = () => {
+    setImageFile(null)
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const uploadImage = async () => {
+    if (!imageFile) return null
+    setUploading(true)
+    const ext = imageFile.name.split('.').pop()
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('task-proofs')
+      .upload(fileName, imageFile, { contentType: imageFile.type, upsert: false })
+    setUploading(false)
+    if (uploadError) throw new Error(uploadError.message || 'Could not upload image.')
+    const { data } = supabase.storage.from('task-proofs').getPublicUrl(fileName)
+    return data.publicUrl
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
     try {
+      let finalProofUrl = proofUrl || null
+      if (imageFile) {
+        finalProofUrl = await uploadImage()
+      }
       const { error: rpcError } = await supabase.rpc('submit_task_proof', {
         p_task_id: id,
         p_proof_text: proofText,
-        p_proof_url: proofUrl || null,
+        p_proof_url: finalProofUrl,
       })
       if (rpcError) throw rpcError
+      clearImage()
       setDone(true)
       refreshProfile()
     } catch (err) {
@@ -131,19 +181,57 @@ export default function TaskDetail() {
             />
           </div>
           <div>
-            <label className="label">Screenshot / proof URL (optional)</label>
+            <label className="label">Screenshot / proof image</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {imagePreview ? (
+              <div className="relative rounded-lg overflow-hidden border border-base-600 bg-base-900">
+                <img src={imagePreview} alt="Proof preview" className="w-full max-h-64 object-contain" />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 rounded-lg bg-base-950/80 p-1.5 text-slate-300 hover:text-white hover:bg-base-950 transition"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full rounded-lg border-2 border-dashed border-base-600 hover:border-mint-500/50 bg-base-900 px-4 py-8 transition cursor-pointer"
+              >
+                <Upload size={24} className="text-slate-500 mb-2" />
+                <span className="text-sm text-slate-400">Click to upload a screenshot</span>
+                <span className="text-xs text-slate-600 mt-1">JPEG, PNG, WebP, or GIF — max 10 MB</span>
+              </button>
+            )}
+            {uploading && (
+              <p className="text-xs text-mint-400 mt-2 flex items-center gap-1.5">
+                <Loader2 size={12} className="animate-spin" /> Uploading image…
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="label">Or paste a screenshot / proof URL (optional)</label>
             <input
               type="url"
               className="input"
               placeholder="https://…"
               value={proofUrl}
+              disabled={!!imageFile}
               onChange={(e) => setProofUrl(e.target.value)}
             />
           </div>
           <ErrorBanner message={error} />
           <button type="submit" disabled={submitting} className="btn-primary w-full">
             {submitting && <Loader2 size={16} className="animate-spin" />}
-            Submit for review
+            {submitting ? 'Submitting…' : 'Submit for review'}
           </button>
         </form>
       )}

@@ -131,11 +131,15 @@ export default function ReviewSubmissions() {
               </div>
 
               <p className="text-sm text-slate-400 mt-3">{s.proof_text}</p>
-              {s.proof_url && (
+              {s.proof_url && /\.(jpe?g|png|webp|gif)$/i.test(s.proof_url) ? (
+                <a href={s.proof_url} target="_blank" rel="noreferrer" className="block mt-2">
+                  <img src={s.proof_url} alt="Proof screenshot" className="rounded-lg max-h-64 object-contain border border-base-700" />
+                </a>
+              ) : s.proof_url ? (
                 <a href={s.proof_url} target="_blank" rel="noreferrer" className="text-sm text-mint-400 hover:underline mt-1 inline-block break-all">
                   {s.proof_url}
                 </a>
-              )}
+              ) : null}
 
               {s.status === 'pending' && (
                 <div className="mt-4 pt-4 border-t border-base-700">
