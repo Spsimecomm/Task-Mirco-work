@@ -1,0 +1,88 @@
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Wallet, Clock, ArrowUpFromLine, Search, ArrowRight } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import StatCard from '../components/StatCard'
+import { StatusBadge, EmptyState } from '../components/Shared'
+
+export default function WorkerDashboard() {
+  const { user, profile } = useAuth()
+  const [submissions, setSubmissions] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    const load = async () => {
+      const { data } = await supabase
+        .from('submissions')
+        .select('id, status, created_at, proof_text, tasks ( title, reward, category )')
+        .eq('worker_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(6)
+      setSubmissions(data || [])
+      setLoading(false)
+    }
+    load()
+  }, [user])
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}</h1>
+          <p className="text-sm text-slate-500 mt-1">Here's how your work is paying off.</p>
+        </div>
+        <Link to="/marketplace" className="btn-primary">
+          <Search size={16} />
+          Browse tasks
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard icon={Wallet} label="Earnings" value={`$${Number(profile?.earnings ?? 0).toFixed(2)}`} tone="mint" hint="Approved & available" />
+        <StatCard icon={Clock} label="Pending" value={`$${Number(profile?.pending ?? 0).toFixed(2)}`} tone="amber" hint="Awaiting employer review" />
+        <StatCard icon={ArrowUpFromLine} label="Withdrawn" value={`$${Number(profile?.spent ?? 0).toFixed(2)}`} tone="indigo" hint="Total sent to your account" />
+      </div>
+
+      <div className="card">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-base-700">
+          <h2 className="font-semibold text-white">Recent submissions</h2>
+          <Link to="/my-submissions" className="text-sm text-mint-400 hover:underline flex items-center gap-1">
+            View all <ArrowRight size={14} />
+          </Link>
+        </div>
+        {loading ? (
+          <div className="p-6 text-sm text-slate-500">Loading…</div>
+        ) : submissions.length === 0 ? (
+          <div className="p-2">
+            <EmptyState
+              title="No submissions yet"
+              subtitle="Accept a task from the marketplace and submit your proof of work to start earning."
+              action={
+                <Link to="/marketplace" className="btn-primary mt-2">
+                  Find a task
+                </Link>
+              }
+            />
+          </div>
+        ) : (
+          <ul className="divide-y divide-base-700">
+            {submissions.map((s) => (
+              <li key={s.id} className="flex items-center justify-between px-5 py-4">
+                <div>
+                  <p className="text-sm font-medium text-white">{s.tasks?.title}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{s.tasks?.category} · {new Date(s.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-mint-400">${Number(s.tasks?.reward ?? 0).toFixed(2)}</span>
+                  <StatusBadge status={s.status} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
