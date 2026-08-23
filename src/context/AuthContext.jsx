@@ -46,6 +46,24 @@ export function AuthProvider({ children }) {
     return () => listener.subscription.unsubscribe()
   }, [loadProfile])
 
+  // Realtime: keep profile (wallet balances) live without polling
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase || !session?.user?.id) return undefined
+
+    const channel = supabase
+      .channel(`profile-${session.user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
+        () => loadProfile(session.user.id)
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session?.user?.id, loadProfile])
+
   const signUp = async ({ email, password, fullName, role }) => {
     if (!supabase) throw new Error('The sign-in service is not configured yet.')
     const { data, error } = await supabase.auth.signUp({

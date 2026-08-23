@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { Search } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TaskCard from '../components/TaskCard'
@@ -12,19 +12,42 @@ export default function Marketplace() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      const { data } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('status', 'open')
-        .order('created_at', { ascending: false })
-      setTasks(data || [])
-      setLoading(false)
-    }
-    load()
+  const loadTasks = useCallback(async () => {
+    const { data } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+    setTasks(data || [])
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    loadTasks()
+
+    const channel = supabase
+      .channel('marketplace-tasks')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'tasks' },
+        () => loadTasks()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'tasks' },
+        () => loadTasks()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'tasks' },
+        () => loadTasks()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [loadTasks])
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Check, X, Loader2, Inbox } from 'lucide-react'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Check, X, Loader as Loader2, Inbox } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, EmptyState, ErrorBanner } from '../components/Shared'
@@ -14,8 +14,8 @@ export default function ReviewSubmissions() {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('pending')
 
-  const load = async () => {
-    setLoading(true)
+  const load = useCallback(async () => {
+    if (!user) return
     const { data } = await supabase
       .from('submissions')
       .select('id, status, proof_text, proof_url, rejection_reason, created_at, worker_name, tasks ( title, category, reward )')
@@ -23,12 +23,31 @@ export default function ReviewSubmissions() {
       .order('created_at', { ascending: false })
     setSubmissions(data || [])
     setLoading(false)
-  }
+  }, [user])
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+
+    if (!user) return undefined
+
+    const channel = supabase
+      .channel(`employer-review-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'submissions', filter: `employer_id=eq.${user.id}` },
+        () => load()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'submissions', filter: `employer_id=eq.${user.id}` },
+        () => load()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, load])
 
   const handleApprove = async (id) => {
     setError('')

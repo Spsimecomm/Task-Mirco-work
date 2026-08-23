@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, EmptyState } from '../components/Shared'
@@ -9,18 +9,40 @@ export default function MySubmissions() {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('submissions')
-        .select('id, status, proof_text, proof_url, rejection_reason, created_at, tasks ( title, category, reward )')
-        .eq('worker_id', user.id)
-        .order('created_at', { ascending: false })
-      setSubmissions(data || [])
-      setLoading(false)
-    }
-    load()
+  const load = useCallback(async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('submissions')
+      .select('id, status, proof_text, proof_url, rejection_reason, created_at, tasks ( title, category, reward )')
+      .eq('worker_id', user.id)
+      .order('created_at', { ascending: false })
+    setSubmissions(data || [])
+    setLoading(false)
   }, [user])
+
+  useEffect(() => {
+    load()
+
+    if (!user) return undefined
+
+    const channel = supabase
+      .channel(`worker-my-submissions-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'submissions', filter: `worker_id=eq.${user.id}` },
+        () => load()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'submissions', filter: `worker_id=eq.${user.id}` },
+        () => load()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, load])
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6">

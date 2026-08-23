@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Wallet, Clock, ArrowUpFromLine, Search, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -11,20 +11,41 @@ export default function WorkerDashboard() {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadSubmissions = useCallback(async () => {
     if (!user) return
-    const load = async () => {
-      const { data } = await supabase
-        .from('submissions')
-        .select('id, status, created_at, proof_text, tasks ( title, reward, category )')
-        .eq('worker_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(6)
-      setSubmissions(data || [])
-      setLoading(false)
-    }
-    load()
+    const { data } = await supabase
+      .from('submissions')
+      .select('id, status, created_at, proof_text, tasks ( title, reward, category )')
+      .eq('worker_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(6)
+    setSubmissions(data || [])
+    setLoading(false)
   }, [user])
+
+  useEffect(() => {
+    loadSubmissions()
+
+    if (!user) return undefined
+
+    const channel = supabase
+      .channel(`worker-submissions-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'submissions', filter: `worker_id=eq.${user.id}` },
+        () => loadSubmissions()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'submissions', filter: `worker_id=eq.${user.id}` },
+        () => loadSubmissions()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, loadSubmissions])
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
