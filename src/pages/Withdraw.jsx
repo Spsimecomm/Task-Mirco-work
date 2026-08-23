@@ -10,7 +10,7 @@ const METHODS = [
   { id: 'paypal', label: 'PayPal' },
 ]
 
-const MIN_WITHDRAWAL = 5
+const MIN_WITHDRAWAL = 2
 
 export default function Withdraw() {
   const { profile, refreshProfile } = useAuth()
