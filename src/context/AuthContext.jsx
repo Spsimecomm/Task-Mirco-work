@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
       setProfile(null)
       return
     }
+    if (!supabase) return
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -22,6 +23,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setLoading(false)
+      return undefined
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) loadProfile(session.user.id)
@@ -41,6 +47,7 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const signUp = async ({ email, password, fullName, role }) => {
+    if (!supabase) throw new Error('The sign-in service is not configured yet.')
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -52,13 +59,14 @@ export function AuthProvider({ children }) {
   }
 
   const signIn = async ({ email, password }) => {
+    if (!supabase) throw new Error('The sign-in service is not configured yet.')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     return data
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    if (supabase) await supabase.auth.signOut()
   }
 
   const refreshProfile = () => loadProfile(session?.user?.id)
