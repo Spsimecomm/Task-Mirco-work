@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [withdrawals, setWithdrawals] = useState([])
   const [users, setUsers] = useState([])
   const [earnings, setEarnings] = useState([])
+  const [withdrawalFees, setWithdrawalFees] = useState([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState(null)
   const [rejectingId, setRejectingId] = useState(null)
@@ -25,16 +26,18 @@ export default function AdminDashboard() {
   const [error, setError] = useState('')
 
   const loadAll = useCallback(async () => {
-    const [depRes, wdRes, userRes, earnRes] = await Promise.all([
+    const [depRes, wdRes, userRes, earnRes, feeRes] = await Promise.all([
       supabase.from('deposit_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('*').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('platform_earnings').select('*').order('created_at', { ascending: false }),
+      supabase.from('withdrawal_fee_earnings').select('*').order('created_at', { ascending: false }),
     ])
     setDeposits(depRes.data || [])
     setWithdrawals(wdRes.data || [])
     setUsers(userRes.data || [])
     setEarnings(earnRes.data || [])
+    setWithdrawalFees(feeRes.data || [])
     setLoading(false)
   }, [])
 
@@ -109,6 +112,8 @@ export default function AdminDashboard() {
   }
 
   const totalCommission = earnings.reduce((sum, e) => sum + Number(e.commission_amount), 0)
+    + withdrawalFees.reduce((sum, e) => sum + Number(e.fee_amount), 0)
+  const totalEarningEntries = earnings.length + withdrawalFees.length
   const pendingDeposits = deposits.filter((d) => d.status === 'pending')
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending')
   const employers = users.filter((u) => u.role === 'employer')
@@ -253,6 +258,7 @@ export default function AdminDashboard() {
                   <div className="space-y-1">
                     <p className="font-semibold text-white">${Number(w.amount).toFixed(2)} · {w.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
                     <p className="text-xs text-slate-500">To: {w.account_details}</p>
+                    <p className="text-xs text-slate-500">Fee: ${Number(w.fee_amount ?? 0).toFixed(2)} · Worker receives: ${Number(w.net_amount ?? w.amount).toFixed(2)}</p>
                     <p className="text-xs text-slate-500">{new Date(w.created_at).toLocaleString()}</p>
                   </div>
                   <StatusBadge status={w.status} />
@@ -333,8 +339,8 @@ export default function AdminDashboard() {
         </div>
       ) : tab === 'earnings' ? (
         <div className="space-y-3">
-          {earnings.length === 0 ? (
-            <EmptyState icon={TrendingUp} title="No earnings yet" subtitle="Platform commission from approved tasks will appear here." />
+          {totalEarningEntries === 0 ? (
+            <EmptyState icon={TrendingUp} title="No earnings yet" subtitle="Platform commission from approved tasks and withdrawal fees will appear here." />
           ) : (
             <>
               <div className="card p-5 flex items-center gap-4">
@@ -343,18 +349,29 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-white">${totalCommission.toFixed(2)}</p>
-                  <p className="text-sm text-slate-500">Total platform commission ({earnings.length} approved tasks)</p>
+                  <p className="text-sm text-slate-500">Total platform commission ({totalEarningEntries} entries)</p>
                 </div>
               </div>
               {earnings.map((e) => (
                 <div key={e.id} className="card p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Task reward: ${Number(e.reward_amount).toFixed(2)}</p>
+                    <p className="text-sm font-medium text-white">Task commission · Reward: ${Number(e.reward_amount).toFixed(2)}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Commission ({e.commission_rate}%): ${Number(e.commission_amount).toFixed(2)} · {new Date(e.created_at).toLocaleString()}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-mint-400">+${Number(e.commission_amount).toFixed(2)}</span>
+                </div>
+              ))}
+              {withdrawalFees.map((e) => (
+                <div key={e.id} className="card p-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-white">Withdrawal fee · Requested: ${Number(e.withdrawal_amount).toFixed(2)}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Fee ({e.fee_rate}%): ${Number(e.fee_amount).toFixed(2)} · {new Date(e.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-mint-400">+${Number(e.fee_amount).toFixed(2)}</span>
                 </div>
               ))}
             </>

@@ -10,6 +10,7 @@ const METHODS = [
 ]
 
 const MIN_WITHDRAWAL = 2
+const WITHDRAWAL_FEE_RATE = 0.1
 
 export default function Withdraw() {
   const { profile, refreshProfile } = useAuth()
@@ -20,6 +21,10 @@ export default function Withdraw() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [requests, setRequests] = useState([])
+
+  const requestedAmount = Number(amount) || 0
+  const withdrawalFee = Math.round(requestedAmount * WITHDRAWAL_FEE_RATE * 100) / 100
+  const netAmount = Math.max(0, requestedAmount - withdrawalFee)
 
   const loadRequests = useCallback(async () => {
     const { data } = await supabase
@@ -93,6 +98,23 @@ export default function Withdraw() {
           />
         </div>
 
+        {requestedAmount > 0 && (
+          <div className="rounded-lg border border-base-700 bg-base-900 p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">Requested</span>
+              <span className="text-white font-medium">${requestedAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">Fee ({(WITHDRAWAL_FEE_RATE * 100).toFixed(0)}%)</span>
+              <span className="text-signal-amber font-medium">-${withdrawalFee.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-base-700 pt-2">
+              <span className="text-white font-semibold">You will get</span>
+              <span className="text-mint-400 font-bold">${netAmount.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
+
         <div>
           <label className="label">Payout method</label>
           <div className="grid grid-cols-2 gap-3">
@@ -155,6 +177,7 @@ export default function Withdraw() {
               <li key={r.id} className="flex items-center justify-between px-5 py-3 text-sm">
                 <div>
                   <p className="text-white font-medium">${Number(r.amount).toFixed(2)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                  <p className="text-xs text-slate-500">Fee: ${Number(r.fee_amount ?? 0).toFixed(2)} · You get: ${Number(r.net_amount ?? r.amount).toFixed(2)}</p>
                   <p className="text-xs text-slate-500">{r.account_details} · {new Date(r.created_at).toLocaleString()}</p>
                 </div>
                 <StatusBadge status={r.status} />
