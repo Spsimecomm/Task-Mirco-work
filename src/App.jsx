@@ -6,6 +6,7 @@ import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import Home from './pages/Home'
+import About from './pages/About'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import WorkerDashboard from './pages/WorkerDashboard'
@@ -48,12 +49,22 @@ export default function App() {
       <Navbar />
 
       <Routes>
-        {/* Public Pages */}
+        {/* ================================
+            Public Pages
+        ================================= */}
+
         <Route path="/" element={<Home />} />
+
+        <Route path="/about" element={<About />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
 
-        {/* Worker Pages */}
+        {/* ================================
+            Worker Pages
+        ================================= */}
+
         <Route
           path="/worker"
           element={
@@ -99,7 +110,10 @@ export default function App() {
           }
         />
 
-        {/* Employer Pages */}
+        {/* ================================
+            Employer Pages
+        ================================= */}
+
         <Route
           path="/employer"
           element={
@@ -136,7 +150,10 @@ export default function App() {
           }
         />
 
-        {/* Admin Page */}
+        {/* ================================
+            Admin Page
+        ================================= */}
+
         <Route
           path="/admin"
           element={
@@ -146,8 +163,14 @@ export default function App() {
           }
         />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* ================================
+            Fallback
+        ================================= */}
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
       </Routes>
     </div>
   )
