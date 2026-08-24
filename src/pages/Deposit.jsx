@@ -1,65 +1,82 @@
-import React, { useEffect, useState } from 'react'
-import { CreditCard, Loader2, CheckCircle2 } from 'lucide-react'
+import React, { useEffect, useState, useCallback } from 'react'
+import { ArrowDownToLine, Loader2, CheckCircle2, Smartphone } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { ErrorBanner } from '../components/Shared'
+import { StatusBadge, ErrorBanner, EmptyState } from '../components/Shared'
 
-const PRESETS = [10, 25, 50, 100]
+const PAYMENT_NUMBERS = {
+  bkash: '01712-345678',
+  nagad: '01812-345678',
+}
+
 const METHODS = [
-  { id: 'card', label: 'Credit / Debit card' },
-  { id: 'bkash', label: 'bKash' },
-  { id: 'bank', label: 'Bank transfer' },
+  { id: 'bkash', label: 'bKash', color: 'bg-pink-500/10 text-pink-400 border-pink-500/30' },
+  { id: 'nagad', label: 'Nagad', color: 'bg-orange-500/10 text-orange-400 border-orange-500/30' },
 ]
 
 export default function Deposit() {
   const { profile, refreshProfile } = useAuth()
-  const [amount, setAmount] = useState(25)
-  const [method, setMethod] = useState('card')
+  const [amount, setAmount] = useState('')
+  const [method, setMethod] = useState('bkash')
+  const [senderMobile, setSenderMobile] = useState('')
+  const [trxId, setTrxId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [history, setHistory] = useState([])
+  const [requests, setRequests] = useState([])
 
-  const loadHistory = async () => {
+  const loadRequests = useCallback(async () => {
     const { data } = await supabase
-      .from('transactions')
+      .from('deposit_requests')
       .select('*')
-      .eq('type', 'deposit')
       .order('created_at', { ascending: false })
-      .limit(8)
-    setHistory(data || [])
-  }
-
-  useEffect(() => {
-    loadHistory()
+    setRequests(data || [])
   }, [])
 
-  const handleDeposit = async (e) => {
+  useEffect(() => {
+    loadRequests()
+  }, [loadRequests])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess(false)
-    if (!amount || amount <= 0) {
+    const amt = Number(amount)
+    if (!amt || amt <= 0) {
       setError('Enter a valid amount.')
+      return
+    }
+    if (!senderMobile.trim()) {
+      setError('Enter your sender mobile number.')
+      return
+    }
+    if (!trxId.trim()) {
+      setError('Enter the transaction ID (TrxID).')
       return
     }
     setLoading(true)
     try {
-      // NOTE: this simulates a successful payment. Wire this up to your real
-      // payment provider (Stripe, bKash, Nagad) and call the RPC from a
-      // server-side webhook after the charge succeeds in production.
-      const { error: rpcError } = await supabase.rpc('deposit_funds', {
-        p_amount: Number(amount),
+      const { error: rpcError } = await supabase.rpc('request_deposit', {
+        p_amount: amt,
         p_method: method,
+        p_sender_mobile: senderMobile.trim(),
+        p_trx_id: trxId.trim(),
       })
       if (rpcError) throw rpcError
       setSuccess(true)
-      await refreshProfile()
-      await loadHistory()
+      setAmount('')
+      setSenderMobile('')
+      setTrxId('')
+      await loadRequests()
     } catch (err) {
-      setError(err.message || 'Deposit failed.')
+      setError(err.message || 'Could not submit deposit request.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard?.writeText(text)
   }
 
   return (
@@ -71,90 +88,119 @@ export default function Deposit() {
         </p>
       </div>
 
-      <form onSubmit={handleDeposit} className="card p-6 space-y-5">
-        <div>
-          <label className="label">Amount (USD)</label>
-          <div className="flex gap-2 mb-2">
-            {PRESETS.map((p) => (
-              <button
-                type="button"
-                key={p}
-                onClick={() => setAmount(p)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                  amount === p ? 'border-mint-500 bg-mint-500/10 text-mint-400' : 'border-base-600 text-slate-300 hover:border-base-500'
-                }`}
-              >
-                ${p}
-              </button>
-            ))}
-          </div>
-          <input
-            type="number"
-            min="1"
-            step="0.01"
-            className="input"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-
+      <form onSubmit={handleSubmit} className="card p-6 space-y-5">
         <div>
           <label className="label">Payment method</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {METHODS.map((m) => (
               <button
                 type="button"
                 key={m.id}
                 onClick={() => setMethod(m.id)}
-                className={`rounded-lg border px-3 py-3 text-sm font-medium transition ${
-                  method === m.id ? 'border-mint-500 bg-mint-500/10 text-mint-400' : 'border-base-600 text-slate-300 hover:border-base-500'
+                className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                  method === m.id
+                    ? `${m.color} border-current`
+                    : 'border-base-600 text-slate-300 hover:border-base-500'
                 }`}
               >
+                <Smartphone size={16} />
                 {m.label}
               </button>
             ))}
           </div>
         </div>
 
-        {method === 'card' && (
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input col-span-2" placeholder="Card number" defaultValue="4242 4242 4242 4242" />
-            <input className="input" placeholder="MM/YY" defaultValue="12/29" />
-            <input className="input" placeholder="CVC" defaultValue="123" />
+        <div className="rounded-lg border border-base-700 bg-base-900 p-4 space-y-2">
+          <p className="text-xs text-slate-500">Send money to this {method === 'bkash' ? 'bKash' : 'Nagad'} number:</p>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-white tracking-wide">{PAYMENT_NUMBERS[method]}</span>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(PAYMENT_NUMBERS[method])}
+              className="text-xs text-mint-400 hover:underline"
+            >
+              Copy
+            </button>
           </div>
-        )}
+          <p className="text-xs text-slate-500">Personal / Merchant number</p>
+        </div>
+
+        <div>
+          <label className="label">Amount (USD)</label>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            className="input"
+            placeholder="Enter deposit amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="label">Your sender mobile number</label>
+          <input
+            type="tel"
+            className="input"
+            placeholder="01XXXXXXXXX"
+            value={senderMobile}
+            onChange={(e) => setSenderMobile(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="label">Transaction ID (TrxID)</label>
+          <input
+            type="text"
+            className="input"
+            placeholder="Enter the TrxID from your SMS"
+            value={trxId}
+            onChange={(e) => setTrxId(e.target.value)}
+          />
+        </div>
 
         {success && (
           <div className="rounded-lg border border-mint-500/30 bg-mint-500/10 px-4 py-3 text-sm text-mint-400 flex items-center gap-2">
-            <CheckCircle2 size={16} /> Deposit successful — funds added to your balance.
+            <CheckCircle2 size={16} /> Deposit request submitted. Your balance will be credited after admin approval.
           </div>
         )}
         <ErrorBanner message={error} />
 
         <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-          Deposit ${Number(amount || 0).toFixed(2)}
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowDownToLine size={16} />}
+          Submit deposit request
         </button>
         <p className="text-xs text-slate-500 text-center">
-          Demo payment flow — no real charge is made. Swap in Stripe/bKash on the backend for production.
+          Send money to the {method === 'bkash' ? 'bKash' : 'Nagad'} number above, then enter the TrxID. Your request will be reviewed by admin.
         </p>
       </form>
 
-      {history.length > 0 && (
-        <div className="card">
-          <div className="px-5 py-4 border-b border-base-700">
-            <h2 className="font-semibold text-white">Deposit history</h2>
+      <div className="card">
+        <div className="px-5 py-4 border-b border-base-700">
+          <h2 className="font-semibold text-white">Deposit history</h2>
+        </div>
+        {requests.length === 0 ? (
+          <div className="p-2">
+            <EmptyState title="No deposits yet" subtitle="Your deposit requests will appear here." />
           </div>
+        ) : (
           <ul className="divide-y divide-base-700">
-            {history.map((h) => (
-              <li key={h.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="text-slate-400">{new Date(h.created_at).toLocaleString()}</span>
-                <span className="text-mint-400 font-medium">+${Number(h.amount).toFixed(2)}</span>
+            {requests.map((r) => (
+              <li key={r.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                <div>
+                  <p className="text-white font-medium">${Number(r.amount).toFixed(2)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                  <p className="text-xs text-slate-500">TrxID: {r.trx_id} · {new Date(r.created_at).toLocaleString()}</p>
+                  {r.rejection_reason && (
+                    <p className="text-xs text-signal-rose mt-1">Rejected: {r.rejection_reason}</p>
+                  )}
+                </div>
+                <StatusBadge status={r.status} />
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

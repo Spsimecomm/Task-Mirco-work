@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader as Loader2 } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -16,6 +16,7 @@ import MySubmissions from './pages/MySubmissions'
 import ReviewSubmissions from './pages/ReviewSubmissions'
 import Deposit from './pages/Deposit'
 import Withdraw from './pages/Withdraw'
+import AdminDashboard from './pages/AdminDashboard'
 
 function RoleRedirect() {
   const { user, role, loading } = useAuth()
@@ -27,6 +28,7 @@ function RoleRedirect() {
     )
   }
   if (!user) return <Navigate to="/login" replace />
+  if (role === 'admin') return <Navigate to="/admin" replace />
   return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
 }
 
@@ -49,6 +51,8 @@ export default function App() {
         <Route path="/create-task" element={<ProtectedRoute allowRole="employer"><CreateTask /></ProtectedRoute>} />
         <Route path="/review-submissions" element={<ProtectedRoute allowRole="employer"><ReviewSubmissions /></ProtectedRoute>} />
         <Route path="/deposit" element={<ProtectedRoute allowRole="employer"><Deposit /></ProtectedRoute>} />
+
+        <Route path="/admin" element={<ProtectedRoute allowRole="admin"><AdminDashboard /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

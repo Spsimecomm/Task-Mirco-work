@@ -1,9 +1,6 @@
 import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import {
-  Wallet, LayoutGrid, ListChecks, PlusCircle, LogOut, Menu, X,
-  Briefcase, ClipboardCheck, ArrowDownToLine, ArrowUpFromLine,
-} from 'lucide-react'
+import { Wallet, LayoutGrid, ListChecks, CirclePlus as PlusCircle, LogOut, Menu, X, Briefcase, ClipboardCheck, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 function fmt(n) {
@@ -29,7 +26,11 @@ export default function Navbar() {
     { to: '/deposit', label: 'Deposit', icon: ArrowDownToLine },
   ]
 
-  const links = role === 'employer' ? employerLinks : workerLinks
+  const adminLinks = [
+    { to: '/admin', label: 'Admin dashboard', icon: LayoutGrid },
+  ]
+
+  const links = role === 'admin' ? adminLinks : role === 'employer' ? employerLinks : workerLinks
 
   const handleSignOut = async () => {
     await signOut()
@@ -43,7 +44,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link to={role === 'employer' ? '/employer' : '/worker'} className="flex items-center gap-2">
+            <Link to={role === 'admin' ? '/admin' : role === 'employer' ? '/employer' : '/worker'} className="flex items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-mint-500 text-base-950 font-display font-extrabold">T</span>
               <span className="font-display font-bold text-white text-lg tracking-tight">Taskly</span>
             </Link>
@@ -69,9 +70,9 @@ export default function Navbar() {
             <div className="flex items-center gap-2 rounded-lg border border-base-700 bg-base-900 px-3 py-1.5">
               <Wallet size={15} className="text-mint-400" />
               <span className="text-sm font-semibold text-white">
-                {role === 'employer' ? fmt(profile?.deposited) : fmt(profile?.earnings)}
+                {role === 'employer' ? fmt(profile?.deposited) : role === 'worker' ? fmt(profile?.earnings) : 'Admin'}
               </span>
-              <span className="text-xs text-slate-500">{role === 'employer' ? 'balance' : 'earned'}</span>
+              <span className="text-xs text-slate-500">{role === 'employer' ? 'balance' : role === 'worker' ? 'earned' : 'panel'}</span>
             </div>
             <button onClick={handleSignOut} className="btn-ghost">
               <LogOut size={16} />

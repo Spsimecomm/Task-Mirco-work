@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import { ArrowUpFromLine, Loader2, CheckCircle2 } from 'lucide-react'
+import React, { useEffect, useState, useCallback } from 'react'
+import { ArrowUpFromLine, Loader as Loader2, CircleCheck as CheckCircle2, Smartphone } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, ErrorBanner, EmptyState } from '../components/Shared'
 
 const METHODS = [
-  { id: 'bkash', label: 'bKash' },
-  { id: 'bank', label: 'Bank transfer' },
-  { id: 'paypal', label: 'PayPal' },
+  { id: 'bkash', label: 'bKash', color: 'bg-pink-500/10 text-pink-400 border-pink-500/30' },
+  { id: 'nagad', label: 'Nagad', color: 'bg-orange-500/10 text-orange-400 border-orange-500/30' },
 ]
 
 const MIN_WITHDRAWAL = 2
@@ -22,17 +21,17 @@ export default function Withdraw() {
   const [success, setSuccess] = useState(false)
   const [requests, setRequests] = useState([])
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     const { data } = await supabase
       .from('withdrawals')
       .select('*')
       .order('created_at', { ascending: false })
     setRequests(data || [])
-  }
+  }, [])
 
   useEffect(() => {
     loadRequests()
-  }, [])
+  }, [loadRequests])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -48,7 +47,7 @@ export default function Withdraw() {
       return
     }
     if (!account.trim()) {
-      setError('Enter your payout account details.')
+      setError('Enter your mobile number for payout.')
       return
     }
     setLoading(true)
@@ -56,7 +55,7 @@ export default function Withdraw() {
       const { error: rpcError } = await supabase.rpc('request_withdrawal', {
         p_amount: amt,
         p_method: method,
-        p_account_details: account,
+        p_account_details: account.trim(),
       })
       if (rpcError) throw rpcError
       setSuccess(true)
@@ -96,16 +95,19 @@ export default function Withdraw() {
 
         <div>
           <label className="label">Payout method</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {METHODS.map((m) => (
               <button
                 type="button"
                 key={m.id}
                 onClick={() => setMethod(m.id)}
-                className={`rounded-lg border px-3 py-3 text-sm font-medium transition ${
-                  method === m.id ? 'border-mint-500 bg-mint-500/10 text-mint-400' : 'border-base-600 text-slate-300 hover:border-base-500'
+                className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                  method === m.id
+                    ? `${m.color} border-current`
+                    : 'border-base-600 text-slate-300 hover:border-base-500'
                 }`}
               >
+                <Smartphone size={16} />
                 {m.label}
               </button>
             ))}
@@ -113,10 +115,11 @@ export default function Withdraw() {
         </div>
 
         <div>
-          <label className="label">Account details</label>
+          <label className="label">Your mobile number</label>
           <input
+            type="tel"
             className="input"
-            placeholder={method === 'bank' ? 'Account number & bank name' : 'Phone number / email'}
+            placeholder="01XXXXXXXXX"
             value={account}
             onChange={(e) => setAccount(e.target.value)}
           />
@@ -124,7 +127,7 @@ export default function Withdraw() {
 
         {success && (
           <div className="rounded-lg border border-mint-500/30 bg-mint-500/10 px-4 py-3 text-sm text-mint-400 flex items-center gap-2">
-            <CheckCircle2 size={16} /> Withdrawal request submitted for processing.
+            <CheckCircle2 size={16} /> Withdrawal request submitted. You will receive payment after admin approval.
           </div>
         )}
         <ErrorBanner message={error} />
@@ -133,6 +136,9 @@ export default function Withdraw() {
           {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowUpFromLine size={16} />}
           Request withdrawal
         </button>
+        <p className="text-xs text-slate-500 text-center">
+          Withdrawals are processed by admin. Funds will be sent to your {method === 'bkash' ? 'bKash' : 'Nagad'} account.
+        </p>
       </form>
 
       <div className="card">
@@ -148,8 +154,8 @@ export default function Withdraw() {
             {requests.map((r) => (
               <li key={r.id} className="flex items-center justify-between px-5 py-3 text-sm">
                 <div>
-                  <p className="text-white font-medium">${Number(r.amount).toFixed(2)} · {r.method}</p>
-                  <p className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</p>
+                  <p className="text-white font-medium">${Number(r.amount).toFixed(2)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                  <p className="text-xs text-slate-500">{r.account_details} · {new Date(r.created_at).toLocaleString()}</p>
                 </div>
                 <StatusBadge status={r.status} />
               </li>

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Loader2 } from 'lucide-react'
+import { Loader as Loader2 } from 'lucide-react'
 
 export default function ProtectedRoute({ children, allowRole }) {
   const { user, role, loading } = useAuth()
@@ -17,6 +17,7 @@ export default function ProtectedRoute({ children, allowRole }) {
   if (!user) return <Navigate to="/login" replace />
 
   if (allowRole && role && role !== allowRole) {
+    if (role === 'admin') return <Navigate to="/admin" replace />
     return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
   }
 
