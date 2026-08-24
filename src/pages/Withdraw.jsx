@@ -10,7 +10,7 @@ const METHODS = [
 ]
 
 const MIN_WITHDRAWAL = 2
-const WITHDRAWAL_FEE_RATE = 0.1
+const WITHDRAWAL_FEE_RATE = 0.02
 
 export default function Withdraw() {
   const { profile, refreshProfile } = useAuth()

@@ -11,6 +11,16 @@ const TABS = [
   { id: 'earnings', label: 'Platform Earnings', icon: TrendingUp },
 ]
 
+function money(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00'
+}
+
+function numericValue(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export default function AdminDashboard() {
   const { profile } = useAuth()
   const [tab, setTab] = useState('deposits')
@@ -111,8 +121,8 @@ export default function AdminDashboard() {
     }
   }
 
-  const totalCommission = earnings.reduce((sum, e) => sum + Number(e.commission_amount), 0)
-    + withdrawalFees.reduce((sum, e) => sum + Number(e.fee_amount), 0)
+  const totalCommission = earnings.reduce((sum, e) => sum + numericValue(e.commission_amount), 0)
+    + withdrawalFees.reduce((sum, e) => sum + numericValue(e.fee_amount), 0)
   const totalEarningEntries = earnings.length + withdrawalFees.length
   const pendingDeposits = deposits.filter((d) => d.status === 'pending')
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending')
@@ -203,7 +213,7 @@ export default function AdminDashboard() {
               <div key={d.id} className="card p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="font-semibold text-white">${Number(d.amount).toFixed(2)} · {d.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                    <p className="font-semibold text-white">${money(d.amount)} · {d.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
                     <p className="text-xs text-slate-500">From: {d.sender_mobile} · TrxID: {d.trx_id}</p>
                     <p className="text-xs text-slate-500">{new Date(d.created_at).toLocaleString()}</p>
                     {d.rejection_reason && (
@@ -256,9 +266,9 @@ export default function AdminDashboard() {
               <div key={w.id} className="card p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="font-semibold text-white">${Number(w.amount).toFixed(2)} · {w.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                    <p className="font-semibold text-white">${money(w.amount)} · {w.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
                     <p className="text-xs text-slate-500">To: {w.account_details}</p>
-                    <p className="text-xs text-slate-500">Fee: ${Number(w.fee_amount ?? 0).toFixed(2)} · Worker receives: ${Number(w.net_amount ?? w.amount).toFixed(2)}</p>
+                    <p className="text-xs text-slate-500">Fee: ${money(w.fee_amount)} · Worker receives: ${money(w.net_amount ?? w.amount)}</p>
                     <p className="text-xs text-slate-500">{new Date(w.created_at).toLocaleString()}</p>
                   </div>
                   <StatusBadge status={w.status} />
@@ -310,7 +320,7 @@ export default function AdminDashboard() {
                   <div key={u.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
                       <p className="text-white font-medium">{u.full_name}</p>
-                      <p className="text-xs text-slate-500">Balance: ${Number(u.deposited).toFixed(2)} · Reserved: ${Number(u.pending).toFixed(2)} · Spent: ${Number(u.spent).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">Balance: ${money(u.deposited)} · Reserved: ${money(u.pending)} · Spent: ${money(u.spent)}</p>
                     </div>
                     <StatusBadge status={u.role} />
                   </div>
@@ -328,7 +338,7 @@ export default function AdminDashboard() {
                   <div key={u.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
                       <p className="text-white font-medium">{u.full_name}</p>
-                      <p className="text-xs text-slate-500">Earned: ${Number(u.earnings).toFixed(2)} · Pending: ${Number(u.pending).toFixed(2)} · Withdrawn: ${Number(u.spent).toFixed(2)}</p>
+                      <p className="text-xs text-slate-500">Earned: ${money(u.earnings)} · Pending: ${money(u.pending)} · Withdrawn: ${money(u.spent)}</p>
                     </div>
                     <StatusBadge status={u.role} />
                   </div>
@@ -355,23 +365,23 @@ export default function AdminDashboard() {
               {earnings.map((e) => (
                 <div key={e.id} className="card p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Task commission · Reward: ${Number(e.reward_amount).toFixed(2)}</p>
+                    <p className="text-sm font-medium text-white">Task commission · Reward: ${money(e.reward_amount)}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Commission ({e.commission_rate}%): ${Number(e.commission_amount).toFixed(2)} · {new Date(e.created_at).toLocaleString()}
+                      Commission ({numericValue(e.commission_rate).toFixed(0)}%): ${money(e.commission_amount)} · {new Date(e.created_at).toLocaleString()}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-mint-400">+${Number(e.commission_amount).toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-mint-400">+${money(e.commission_amount)}</span>
                 </div>
               ))}
               {withdrawalFees.map((e) => (
                 <div key={e.id} className="card p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Withdrawal fee · Requested: ${Number(e.withdrawal_amount).toFixed(2)}</p>
+                    <p className="text-sm font-medium text-white">Withdrawal fee · Requested: ${money(e.withdrawal_amount)}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Fee ({e.fee_rate}%): ${Number(e.fee_amount).toFixed(2)} · {new Date(e.created_at).toLocaleString()}
+                      Fee ({numericValue(e.fee_rate).toFixed(0)}%): ${money(e.fee_amount)} · {new Date(e.created_at).toLocaleString()}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-mint-400">+${Number(e.fee_amount).toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-mint-400">+${money(e.fee_amount)}</span>
                 </div>
               ))}
             </>
