@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 import Home from './pages/Home'
 import About from './pages/About'
+import HowItWorks from './pages/HowItWorks'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import WorkerDashboard from './pages/WorkerDashboard'
@@ -56,6 +57,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/about" element={<About />} />
+
+        <Route path="/how-it-works" element={<HowItWorks />} />
 
         <Route path="/login" element={<Login />} />
 
@@ -151,7 +154,7 @@ export default function App() {
         />
 
         {/* ================================
-            Admin Page
+            Admin
         ================================= */}
 
         <Route
