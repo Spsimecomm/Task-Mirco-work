@@ -96,6 +96,25 @@ export default function FAQ() {
 
   return (
     <main className="min-h-screen bg-base-950 text-white">
+      {/* FAQ Structured Data for Search Engines */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqs.map((faq) => ({
+              '@type': 'Question',
+              name: faq.question,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: faq.answer,
+              },
+            })),
+          }),
+        }}
+      />
+
       {/* Hero */}
       <section className="border-b border-white/5">
         <div className="mx-auto max-w-4xl px-5 py-20 text-center sm:px-6 lg:py-28">
