@@ -16,9 +16,19 @@ export default function ProtectedRoute({ children, allowRole }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  if (allowRole && role && role !== allowRole) {
-    if (role === 'admin') return <Navigate to="/admin" replace />
-    return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
+  if (allowRole) {
+    // FAIL-CLOSED: if the role hasn't resolved for some reason (missing
+    // profile row, failed fetch, etc.), do NOT fall through and render
+    // the protected page. Previously `role && role !== allowRole` was
+    // false whenever `role` was null/undefined, which silently let
+    // anyone through to any role-gated page (e.g. typing /employer in
+    // the URL bar). Now an unresolved role is treated as "not allowed".
+    if (!role) return <Navigate to="/login" replace />
+
+    if (role !== allowRole) {
+      if (role === 'admin') return <Navigate to="/admin" replace />
+      return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
+    }
   }
 
   return children
