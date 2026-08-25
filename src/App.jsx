@@ -45,6 +45,26 @@ function RoleRedirect() {
   )
 }
 
+// ================================
+// NEW: decides what to show at "/"
+// - logged out  -> public Home page (unchanged behavior)
+// - logged in   -> auto-redirect to the correct dashboard (worker/employer/admin)
+// This fixes: signup/login leaving the user stuck on the Home page.
+// ================================
+function HomeOrDashboard() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-base-950">
+        <Loader2 className="animate-spin text-mint-400" size={28} />
+      </div>
+    )
+  }
+
+  return user ? <RoleRedirect /> : <Home />
+}
+
 export default function App() {
   return (
     <div className="min-h-screen bg-base-950">
@@ -55,7 +75,7 @@ export default function App() {
             Public Pages
         ================================= */}
 
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomeOrDashboard />} />
 
         <Route path="/about" element={<About />} />
 
