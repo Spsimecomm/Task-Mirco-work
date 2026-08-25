@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Loader as Loader2 } from 'lucide-react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -49,6 +50,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-base-950">
       <Navbar />
+      <SpeedInsights />
 
       <Routes>
         {/* ================================
