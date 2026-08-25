@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { Check, X, Loader as Loader2, Inbox } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { StatusBadge, EmptyState, ErrorBanner } from '../components/Shared'
+import { StatusBadge, EmptyState, ErrorBanner, isSafeUrl } from '../components/Shared'
 
 export default function ReviewSubmissions() {
   const { user, refreshProfile } = useAuth()
@@ -131,14 +131,16 @@ export default function ReviewSubmissions() {
               </div>
 
               <p className="text-sm text-slate-400 mt-3">{s.proof_text}</p>
-              {s.proof_url && /\.(jpe?g|png|webp|gif)$/i.test(s.proof_url) ? (
+              {s.proof_url && isSafeUrl(s.proof_url) && /\.(jpe?g|png|webp|gif)$/i.test(s.proof_url) ? (
                 <a href={s.proof_url} target="_blank" rel="noreferrer" className="block mt-2">
                   <img src={s.proof_url} alt="Proof screenshot" className="rounded-lg max-h-64 object-contain border border-base-700" />
                 </a>
-              ) : s.proof_url ? (
+              ) : s.proof_url && isSafeUrl(s.proof_url) ? (
                 <a href={s.proof_url} target="_blank" rel="noreferrer" className="text-sm text-mint-400 hover:underline mt-1 inline-block break-all">
                   {s.proof_url}
                 </a>
+              ) : s.proof_url ? (
+                <span className="text-sm text-slate-500 mt-1 inline-block break-all">{s.proof_url}</span>
               ) : null}
 
               {s.status === 'pending' && (
