@@ -28,30 +28,18 @@ export function AuthProvider({ children }) {
       return undefined
     }
 
-    // Initial load: wait for the profile (role) to finish loading
-    // BEFORE flipping `loading` to false. Otherwise RoleRedirect reads
-    // `role` while it's still null and defaults everyone to /worker.
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      if (session?.user) {
-        await loadProfile(session.user.id)
-      }
+      if (session?.user) loadProfile(session.user.id)
       setLoading(false)
     })
 
-    // Fires on sign-in / sign-out / token refresh.
-    // Same fix here: keep `loading` true while the profile/role is
-    // being fetched right after a fresh sign-in, so a just-logged-in
-    // Employer doesn't get redirected to /worker before their role
-    // has arrived.
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session?.user) {
-        setLoading(true)
-        loadProfile(session.user.id).finally(() => setLoading(false))
+        loadProfile(session.user.id)
       } else {
         setProfile(null)
-        setLoading(false)
       }
     })
 
