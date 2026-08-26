@@ -74,4 +74,4 @@ Open the printed local URL. Register two accounts — one Worker, one Employer �
 - **Payments**: the Deposit page simulates a successful charge. Wire it to a real processor (Stripe, bKash, Nagad, SSLCommerz) and only call `deposit_funds` from a verified server-side webhook after the charge actually succeeds — never trust the client to say a payment succeeded.
 - **Withdrawals**: requests are logged as `pending`. Build a small admin view (or use the Supabase dashboard / a service-role script) to mark them `approved`/`rejected` after you've sent the payout.
 - **Image proof uploads**: proof currently accepts a URL. To accept real file uploads, add a Supabase Storage bucket with a policy scoped to `auth.uid()` and swap the URL field for an upload widget.
-- **Email confirmation**: enabled by default in Supabase — re-enable it before going live. BB
+- **Email confirmation**: enabled by default in Supabase — re-enable it before going live.
