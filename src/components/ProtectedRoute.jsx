@@ -6,6 +6,7 @@ import { Loader as Loader2 } from 'lucide-react'
 export default function ProtectedRoute({ children, allowRole }) {
   const { user, role, loading } = useAuth()
 
+  // ডাটা লোড হওয়া পর্যন্ত লোডার দেখাবে, পেজ রেন্ডার করবে না
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-base-950">
@@ -14,16 +15,18 @@ export default function ProtectedRoute({ children, allowRole }) {
     )
   }
 
-  // ইউজার লগইন করা না থাকলে লগইন পেজে পাঠাবে
+  // ইউজার লগইন না থাকলে লগইন পেজে পাঠাবে
   if (!user) return <Navigate to="/login" replace />
 
-  // যদি রোল ডিফাইন করা থাকে এবং ইউজারের বর্তমান রোলের সাথে না মিলে
+  // যদি রোল লোড হয়ে থাকে কিন্তু কাঙ্ক্ষিত রোলের সাথে না মিলে
   if (allowRole && role && role !== allowRole) {
     const targetPath = role === 'admin' ? '/admin' : role === 'employer' ? '/employer' : '/worker'
-    
-    // ব্রাউজারকে ফুল রিলোড করে সঠিক ড্যাশবোর্ডে পাঠিয়ে দেবে (ক্যাশ বাইপাস করার জন্য)
-    window.location.href = targetPath
-    return null
+    return <Navigate to={targetPath} replace />
+  }
+
+  // যদি কোনো কারণে রোল ফেচ হতে দেরি হয় বা না পাওয়া যায়, তবুও সেফটির জন্য হোম বা লগইনে পাঠাবে
+  if (allowRole && !role) {
+    return <Navigate to="/login" replace />
   }
 
   return children
