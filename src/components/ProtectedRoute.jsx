@@ -14,11 +14,20 @@ export default function ProtectedRoute({ children, allowRole }) {
     )
   }
 
+  // যদি ইউজার লগইন করা না থাকে
   if (!user) return <Navigate to="/login" replace />
 
-  if (allowRole && role && role !== allowRole) {
-    if (role === 'admin') return <Navigate to="/admin" replace />
-    return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
+  // যদি রোল লোড না হয়ে থাকে বা allowRole এর সাথে না মিলে
+  if (allowRole) {
+    // যদি রোল এখনো ফেচ না হয়ে থাকে, একটু অপেক্ষা বা রিডাইরেক্ট করতে হবে
+    if (!role) {
+      return <Navigate to="/login" replace />
+    }
+
+    if (role !== allowRole) {
+      if (role === 'admin') return <Navigate to="/admin" replace />
+      return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
+    }
   }
 
   return children
