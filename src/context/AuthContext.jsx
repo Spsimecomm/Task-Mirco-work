@@ -14,12 +14,23 @@ export function AuthProvider({ children }) {
       return
     }
     if (!supabase) return
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (!error) setProfile(data)
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+        
+      if (!error && data) {
+        setProfile(data)
+      } else {
+        setProfile(null)
+      }
+    } catch (err) {
+      console.error('Error loading profile:', err)
+      setProfile(null)
+    }
   }, [])
 
   useEffect(() => {
@@ -28,13 +39,22 @@ export function AuthProvider({ children }) {
       return undefined
     }
 
+    let isMounted = true
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return
       setSession(session)
-      if (session?.user) loadProfile(session.user.id)
-      setLoading(false)
+      if (session?.user) {
+        loadProfile(session.user.id).finally(() => {
+          if (isMounted) setLoading(false)
+        })
+      } else {
+        if (isMounted) setLoading(false)
+      }
     })
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return
       setSession(session)
       if (session?.user) {
         loadProfile(session.user.id)
@@ -43,7 +63,10 @@ export function AuthProvider({ children }) {
       }
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      listener.subscription.unsubscribe()
+    }
   }, [loadProfile])
 
   // Realtime: keep profile (wallet balances) live without polling
@@ -72,7 +95,6 @@ export function AuthProvider({ children }) {
       options: { data: { full_name: fullName, role } },
     })
     if (error) throw error
-    // profile row is created by a DB trigger (see supabase/schema.sql handle_new_user)
     return data
   }
 
@@ -85,6 +107,8 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut()
+    setProfile(null)
+    setSession(null)
   }
 
   const refreshProfile = () => loadProfile(session?.user?.id)
