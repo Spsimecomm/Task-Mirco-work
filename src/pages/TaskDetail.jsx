@@ -174,10 +174,27 @@ export default function TaskDetail() {
             <textarea
               required
               rows={4}
-              className="input"
-              placeholder="Describe what you did to complete this task…"
+              className="input leading-relaxed"
+              placeholder="Describe what you did to complete this task (copy/paste URLs, proof notes, etc.)…"
               value={proofText}
               onChange={(e) => setProofText(e.target.value)}
+              onPaste={(e) => {
+                const text = e.clipboardData?.getData('text/plain')
+                if (text !== undefined && text !== null) {
+                  e.preventDefault()
+                  const clean = text.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+                  const target = e.target
+                  const start = target.selectionStart ?? target.value.length
+                  const end = target.selectionEnd ?? target.value.length
+                  const updated = proofText.slice(0, start) + clean + proofText.slice(end)
+                  setProofText(updated)
+                  requestAnimationFrame(() => {
+                    if (target?.setSelectionRange) {
+                      target.setSelectionRange(start + clean.length, start + clean.length)
+                    }
+                  })
+                }
+              }}
             />
           </div>
           <div>

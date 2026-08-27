@@ -61,7 +61,6 @@ export function AuthProvider({ children }) {
       if (!isMounted) return
       setSession(session)
       if (session?.user) {
-        setLoading(true)
         loadProfile(session.user.id)
       } else {
         setProfile(null)
