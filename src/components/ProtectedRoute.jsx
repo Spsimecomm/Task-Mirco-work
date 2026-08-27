@@ -1,35 +1,42 @@
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 
-import React from 'react'
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { Loader as Loader2 } from 'lucide-react'
+/**
+ * @param {boolean} isAuth - Is the user logged in?
+ * @param {string} userRole - Role from the DB profile.
+ * @param {Array} allowedRoles - Roles permitted to see this route.
+ * @param {boolean} isLoading - Is the profile still being fetched?
+ */
+const ProtectedRoute = ({ 
+  isAuth, 
+  userRole, 
+  allowedRoles, 
+  isLoading, 
+  children 
+}) => {
+  const location = useLocation();
 
-export default function ProtectedRoute({ children, allowRole }) {
-  const { user, role, loading } = useAuth()
-
-  // ১. যতক্ষণ না অ্যাথেন্টিকেশন বা বেসিক লোডিং শেষ হচ্ছে
-  if (loading) {
+  // 1. Handle the loading state to prevent premature redirects
+  if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-base-950">
-        <Loader2 className="animate-spin text-mint-400" size={28} />
+      <div className="min-h-screen flex items-center justify-center bg-base-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-mint-500"></div>
       </div>
-    )
+    );
   }
 
-  // ২. ইউজার লগইন করা না থাকলে সোজা লগইন পেজে
-  if (!user) {
-    return <Navigate to="/login" replace />
+  // 2. Redirect to login if not authenticated
+  if (!isAuth) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // ৩. যদি নির্দিষ্ট রোল এলাও করা থাকে এবং ইউজারের রোল অলরেডি লোড হয়ে যায়
-  if (allowRole && role) {
-    if (role !== allowRole) {
-      if (role === 'admin') return <Navigate to="/admin" replace />
-      if (role === 'employer') return <Navigate to="/employer" replace />
-      if (role === 'worker') return <Navigate to="/worker" replace />
-    }
+  // 3. If a specific role is required, check it
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    // If a worker tries to access employer pages, send them home
+    return <Navigate to="/dashboard" replace />;
   }
 
-  // ৪. সব ঠিক থাকলে চিলড্রেন রেন্ডার করবে
-  return children
-}
+  return children;
+};
+
+export default ProtectedRoute;
