@@ -81,22 +81,36 @@ create table if not exists public.withdrawals (
   created_at        timestamptz not null default now()
 );
 
+create table if not exists public.notifications (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  title       text not null,
+  message     text not null,
+  type        text not null default 'submission' check (type in ('submission', 'approval', 'rejection', 'deposit', 'withdrawal', 'general')),
+  link        text,
+  is_read     boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+
 create index if not exists idx_tasks_employer on public.tasks(employer_id);
 create index if not exists idx_tasks_status on public.tasks(status);
 create index if not exists idx_submissions_worker on public.submissions(worker_id);
 create index if not exists idx_submissions_employer on public.submissions(employer_id);
 create index if not exists idx_transactions_user on public.transactions(user_id);
 create index if not exists idx_withdrawals_worker on public.withdrawals(worker_id);
+create index if not exists idx_notifications_user on public.notifications(user_id);
+create index if not exists idx_notifications_is_read on public.notifications(is_read);
 
 -- ----------------------------------------------------------------------------
 -- ROW LEVEL SECURITY
 -- ----------------------------------------------------------------------------
 
-alter table public.profiles     enable row level security;
-alter table public.tasks        enable row level security;
-alter table public.submissions  enable row level security;
-alter table public.transactions enable row level security;
-alter table public.withdrawals  enable row level security;
+alter table public.profiles      enable row level security;
+alter table public.tasks         enable row level security;
+alter table public.submissions   enable row level security;
+alter table public.transactions  enable row level security;
+alter table public.withdrawals   enable row level security;
+alter table public.notifications enable row level security;
 
 -- profiles: a user can only ever read their own wallet/profile row.
 -- No UPDATE/INSERT policy is granted — all writes happen via SECURITY
@@ -126,6 +140,25 @@ create policy "transactions_select_own"
 create policy "withdrawals_select_own"
   on public.withdrawals for select
   using (worker_id = auth.uid());
+
+-- notifications: users can select, update (mark as read), and delete their own notifications.
+-- Authenticated users can insert notifications (e.g. system/flow notifications).
+create policy "notifications_select_own"
+  on public.notifications for select
+  using (user_id = auth.uid());
+
+create policy "notifications_update_own"
+  on public.notifications for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "notifications_delete_own"
+  on public.notifications for delete
+  using (user_id = auth.uid());
+
+create policy "notifications_insert_authenticated"
+  on public.notifications for insert
+  with check (auth.uid() is not null);
 
 -- ----------------------------------------------------------------------------
 -- NEW USER TRIGGER — creates a profile row when someone signs up
@@ -267,6 +300,17 @@ begin
   values (p_task_id, auth.uid(), v_task.employer_id, v_worker_name, p_proof_text, p_proof_url)
   returning id into v_submission_id;
 
+  -- Create real-time notification for the employer
+  insert into public.notifications (user_id, title, message, type, link, is_read)
+  values (
+    v_task.employer_id,
+    'New Proof Submitted',
+    format('Worker %s submitted proof for your task: "%s"', v_worker_name, v_task.title),
+    'submission',
+    '/review-submissions',
+    false
+  );
+
   update public.tasks
   set slots_filled = slots_filled + 1,
       status = case when slots_filled + 1 >= slots_total then 'closed' else status end
@@ -328,6 +372,17 @@ begin
   values
     (v_sub.worker_id, 'earning', v_reward, 'completed', jsonb_build_object('submission_id', p_submission_id)),
     (auth.uid(), 'spend', v_reward, 'completed', jsonb_build_object('submission_id', p_submission_id));
+
+  -- Notify the worker that their submission was approved
+  insert into public.notifications (user_id, title, message, type, link, is_read)
+  values (
+    v_sub.worker_id,
+    'Submission Approved! 🎉',
+    format('Your submission for task was approved. +$%s added to your earnings!', v_reward),
+    'approval',
+    '/my-submissions',
+    false
+  );
 end;
 $$;
 
@@ -376,6 +431,17 @@ begin
   set slots_filled = greatest(slots_filled - 1, 0),
       status = 'open'
   where id = v_sub.task_id;
+
+  -- Notify the worker of the rejection
+  insert into public.notifications (user_id, title, message, type, link, is_read)
+  values (
+    v_sub.worker_id,
+    'Submission Update',
+    format('Your submission was rejected. Reason: %s', coalesce(p_reason, 'Did not meet requirements')),
+    'rejection',
+    '/my-submissions',
+    false
+  );
 end;
 $$;
 

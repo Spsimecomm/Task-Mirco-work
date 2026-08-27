@@ -177,6 +177,28 @@ const initialMockData = {
       created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
     },
   ],
+  notifications: [
+    {
+      id: 'notif-1',
+      user_id: 'usr-employer-1',
+      title: 'New Proof Submitted',
+      message: 'Worker Tanvir Ahmed submitted proof for your task: "Follow our official Facebook page & share latest post"',
+      type: 'submission',
+      link: '/review-submissions',
+      is_read: false,
+      created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
+    },
+    {
+      id: 'notif-2',
+      user_id: 'usr-worker-1',
+      title: 'Submission Approved! 🎉',
+      message: 'Your submission for "Watch 3-minute tech review video" was approved. +$0.45 added to your earnings!',
+      type: 'approval',
+      link: '/my-submissions',
+      is_read: true,
+      created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
+    },
+  ],
 }
 
 function getStoredMockDb() {
@@ -206,11 +228,30 @@ let activeSession = (() => {
 })()
 
 const authListeners = new Set()
+const realtimeListeners = new Set()
 
 function notifyAuth(event, session) {
   authListeners.forEach((cb) => {
     try {
       cb(event, session)
+    } catch (e) {
+      console.error(e)
+    }
+  })
+}
+
+function broadcastRealtimeChange(table, eventType, record) {
+  realtimeListeners.forEach((listener) => {
+    try {
+      if (listener.table === table && (listener.event === '*' || listener.event === eventType)) {
+        listener.callback({
+          eventType,
+          new: record,
+          old: eventType === 'DELETE' ? record : null,
+          table,
+          schema: 'public',
+        })
+      }
     } catch (e) {
       console.error(e)
     }
@@ -322,34 +363,49 @@ function createMockClient() {
             created_at: r.created_at || new Date().toISOString(),
             ...r,
           }))
-          db[table] = [...items, ...inserted]
+          db[table] = [...inserted, ...items]
           saveMockDb(db)
+          inserted.forEach((row) => broadcastRealtimeChange(table, 'INSERT', row))
           return { data: Array.isArray(payload) ? inserted : inserted[0], error: null }
         }
 
         if (operation === 'update') {
-          let updatedCount = 0
+          let updatedRows = []
           db[table] = items.map((item) => {
-            const matches = filters.every(({ col, val }) => item[col] === val)
+            const matches = filters.every(({ col, val }) => {
+              if (typeof val === 'boolean') return Boolean(item[col]) === val
+              return String(item[col]) === String(val)
+            })
             if (matches) {
-              updatedCount++
-              return { ...item, ...payload }
+              const updated = { ...item, ...payload }
+              updatedRows.push(updated)
+              return updated
             }
             return item
           })
           saveMockDb(db)
+          updatedRows.forEach((row) => broadcastRealtimeChange(table, 'UPDATE', row))
           return { data: payload, error: null }
         }
 
         if (operation === 'delete') {
-          db[table] = items.filter((item) => !filters.every(({ col, val }) => item[col] === val))
+          const toDelete = items.filter((item) => filters.every(({ col, val }) => {
+            if (typeof val === 'boolean') return Boolean(item[col]) === val
+            return String(item[col]) === String(val)
+          }))
+          db[table] = items.filter((item) => !filters.every(({ col, val }) => {
+            if (typeof val === 'boolean') return Boolean(item[col]) === val
+            return String(item[col]) === String(val)
+          }))
           saveMockDb(db)
+          toDelete.forEach((row) => broadcastRealtimeChange(table, 'DELETE', row))
           return { data: null, error: null }
         }
 
         // SELECT query
         let result = items.filter((item) => {
           return filters.every(({ col, val }) => {
+            if (typeof val === 'boolean') return Boolean(item[col]) === val
             return String(item[col]) === String(val)
           })
         })
@@ -518,12 +574,14 @@ function createMockClient() {
         if (task) {
           task.slots_filled = Math.min(task.slots_total, (task.slots_filled || 0) + 1)
         }
+        const employerId = task?.employer_id || 'usr-employer-1'
+        const workerName = currentProfile?.full_name || 'Worker'
         const newSub = {
           id: 'sub-' + Math.random().toString(36).slice(2, 9),
           task_id: p_task_id,
           worker_id: currentUserId,
-          employer_id: task?.employer_id || 'usr-employer-1',
-          worker_name: currentProfile?.full_name || 'Worker',
+          employer_id: employerId,
+          worker_name: workerName,
           proof_text: p_proof_text,
           proof_url: p_proof_url,
           status: 'pending',
@@ -531,7 +589,25 @@ function createMockClient() {
           created_at: new Date().toISOString(),
         }
         db.submissions.unshift(newSub)
+
+        // Create Real-time Notification for Employer
+        const newNotif = {
+          id: 'notif-' + Math.random().toString(36).slice(2, 9),
+          user_id: employerId,
+          title: 'New Proof Submitted',
+          message: `Worker ${workerName} submitted proof for your task: "${task?.title || 'Task'}"`,
+          type: 'submission',
+          link: '/review-submissions',
+          is_read: false,
+          created_at: new Date().toISOString(),
+        }
+        if (!db.notifications) db.notifications = []
+        db.notifications.unshift(newNotif)
+
         saveMockDb(db)
+        broadcastRealtimeChange('tasks', 'UPDATE', task)
+        broadcastRealtimeChange('submissions', 'INSERT', newSub)
+        broadcastRealtimeChange('notifications', 'INSERT', newNotif)
         return { data: newSub, error: null }
       }
 
@@ -545,8 +621,25 @@ function createMockClient() {
           if (worker && task) {
             worker.earnings = (Number(worker.earnings) || 0) + Number(task.reward)
           }
+
+          // Create notification for worker
+          const notif = {
+            id: 'notif-' + Math.random().toString(36).slice(2, 9),
+            user_id: sub.worker_id,
+            title: 'Submission Approved! 🎉',
+            message: `Your submission for "${task?.title || 'Task'}" was approved. +$${Number(task?.reward || 0).toFixed(2)} added to your earnings!`,
+            type: 'approval',
+            link: '/my-submissions',
+            is_read: false,
+            created_at: new Date().toISOString(),
+          }
+          if (!db.notifications) db.notifications = []
+          db.notifications.unshift(notif)
+
+          saveMockDb(db)
+          broadcastRealtimeChange('submissions', 'UPDATE', sub)
+          broadcastRealtimeChange('notifications', 'INSERT', notif)
         }
-        saveMockDb(db)
         return { data: sub, error: null }
       }
 
@@ -556,8 +649,29 @@ function createMockClient() {
         if (sub) {
           sub.status = 'rejected'
           sub.rejection_reason = p_rejection_reason || 'Rejected by employer'
+          const task = db.tasks.find((t) => t.id === sub.task_id)
+          if (task) {
+            task.slots_filled = Math.max(0, (task.slots_filled || 1) - 1)
+          }
+
+          // Create notification for worker
+          const notif = {
+            id: 'notif-' + Math.random().toString(36).slice(2, 9),
+            user_id: sub.worker_id,
+            title: 'Submission Update',
+            message: `Your submission for "${task?.title || 'Task'}" was rejected. Reason: ${p_rejection_reason || 'Did not meet requirements'}`,
+            type: 'rejection',
+            link: '/my-submissions',
+            is_read: false,
+            created_at: new Date().toISOString(),
+          }
+          if (!db.notifications) db.notifications = []
+          db.notifications.unshift(notif)
+
+          saveMockDb(db)
+          broadcastRealtimeChange('submissions', 'UPDATE', sub)
+          broadcastRealtimeChange('notifications', 'INSERT', notif)
         }
-        saveMockDb(db)
         return { data: sub, error: null }
       }
 
@@ -632,19 +746,41 @@ function createMockClient() {
     },
 
     channel(name) {
+      const channelListeners = []
       const channelObj = {
         on(event, filter, callback) {
+          const handler = {
+            channelName: name,
+            event: filter.event || '*',
+            table: filter.table || '*',
+            filter: filter.filter || null,
+            callback,
+          }
+          channelListeners.push(handler)
           return channelObj
         },
-        subscribe() {
+        subscribe(statusCallback) {
+          channelListeners.forEach((listener) => {
+            realtimeListeners.add(listener)
+          })
+          if (typeof statusCallback === 'function') {
+            statusCallback('SUBSCRIBED')
+          }
           return channelObj
+        },
+        unsubscribe() {
+          channelListeners.forEach((listener) => {
+            realtimeListeners.delete(listener)
+          })
         },
       }
       return channelObj
     },
 
     removeChannel(channel) {
-      // no-op
+      if (channel && typeof channel.unsubscribe === 'function') {
+        channel.unsubscribe()
+      }
     },
   }
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Wallet, LayoutGrid, ListChecks, CirclePlus as PlusCircle, LogOut, Menu, X, Briefcase, ClipboardCheck, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { NotificationBell } from './NotificationBell'
 
 function fmt(n) {
   return `$${Number(n ?? 0).toFixed(2)}`
@@ -76,7 +77,8 @@ export default function Navbar() {
             </nav>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <NotificationBell />
             <div className="flex items-center gap-2 rounded-lg border border-base-700 bg-base-900 px-3 py-1.5">
               <Wallet size={15} className="text-mint-400" />
               <span className="text-sm font-semibold text-white">
@@ -90,9 +92,12 @@ export default function Navbar() {
             </button>
           </div>
 
-          <button className="md:hidden text-slate-300" onClick={() => setOpen(!open)}>
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          <div className="flex md:hidden items-center gap-2">
+            <NotificationBell />
+            <button className="text-slate-300 p-1" onClick={() => setOpen(!open)}>
+              {open ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </div>
 

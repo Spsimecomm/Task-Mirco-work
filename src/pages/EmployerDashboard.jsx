@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Wallet, Clock, TrendingDown, PlusCircle, ArrowRight } from 'lucide-react'
+import { Wallet, Clock, TrendingDown, PlusCircle, ArrowRight, Bell, ClipboardCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import StatCard from '../components/StatCard'
@@ -9,6 +9,7 @@ import { StatusBadge, EmptyState } from '../components/Shared'
 export default function EmployerDashboard() {
   const { user, profile } = useAuth()
   const [tasks, setTasks] = useState([])
+  const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const loadTasks = useCallback(async () => {
@@ -20,32 +21,52 @@ export default function EmployerDashboard() {
       .order('created_at', { ascending: false })
       .limit(6)
     setTasks(data || [])
-    setLoading(false)
   }, [user])
 
+  const loadPendingCount = useCallback(async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('submissions')
+      .select('id, status')
+      .eq('employer_id', user.id)
+      .eq('status', 'pending')
+    setPendingSubmissionsCount(data ? data.length : 0)
+  }, [user])
+
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    await Promise.all([loadTasks(), loadPendingCount()])
+    setLoading(false)
+  }, [loadTasks, loadPendingCount])
+
   useEffect(() => {
-    loadTasks()
+    loadAll()
 
     if (!user) return undefined
 
     const channel = supabase
-      .channel(`employer-tasks-${user.id}`)
+      .channel(`employer-dashboard-${user.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'tasks', filter: `employer_id=eq.${user.id}` },
+        { event: '*', schema: 'public', table: 'tasks', filter: `employer_id=eq.${user.id}` },
         () => loadTasks()
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'tasks', filter: `employer_id=eq.${user.id}` },
-        () => loadTasks()
+        { event: '*', schema: 'public', table: 'submissions', filter: `employer_id=eq.${user.id}` },
+        () => loadPendingCount()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+        () => loadPendingCount()
       )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user, loadTasks])
+  }, [user, loadAll, loadTasks, loadPendingCount])
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
@@ -59,6 +80,31 @@ export default function EmployerDashboard() {
           Post a task
         </Link>
       </div>
+
+      {pendingSubmissionsCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-signal-amber/30 bg-signal-amber/10 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-signal-amber/20 text-signal-amber shrink-0">
+              <ClipboardCheck size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">
+                {pendingSubmissionsCount} pending proof {pendingSubmissionsCount === 1 ? 'submission' : 'submissions'} awaiting your review
+              </p>
+              <p className="text-xs text-slate-400">
+                Workers have submitted task proof. Review and approve to release payment.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/review-submissions"
+            className="flex items-center gap-1.5 rounded-lg bg-signal-amber px-3.5 py-1.5 text-xs font-semibold text-base-950 transition hover:bg-signal-amber/90 shrink-0"
+          >
+            Review Now
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard icon={Wallet} label="Balance" value={`$${Number(profile?.deposited ?? 0).toFixed(2)}`} tone="mint" hint="Available to fund tasks" />
