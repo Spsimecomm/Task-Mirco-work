@@ -11,9 +11,13 @@ export function AuthProvider({ children }) {
   const loadProfile = useCallback(async (userId) => {
     if (!userId) {
       setProfile(null)
+      setLoading(false)
       return
     }
-    if (!supabase) return
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
     
     try {
       const { data, error } = await supabase
@@ -21,7 +25,7 @@ export function AuthProvider({ children }) {
         .select('*')
         .eq('id', userId)
         .single()
-        
+      
       if (!error && data) {
         setProfile(data)
       } else {
@@ -30,6 +34,8 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error('Error loading profile:', err)
       setProfile(null)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -45,11 +51,9 @@ export function AuthProvider({ children }) {
       if (!isMounted) return
       setSession(session)
       if (session?.user) {
-        loadProfile(session.user.id).finally(() => {
-          if (isMounted) setLoading(false)
-        })
+        loadProfile(session.user.id)
       } else {
-        if (isMounted) setLoading(false)
+        setLoading(false)
       }
     })
 
@@ -57,9 +61,11 @@ export function AuthProvider({ children }) {
       if (!isMounted) return
       setSession(session)
       if (session?.user) {
+        setLoading(true)
         loadProfile(session.user.id)
       } else {
         setProfile(null)
+        setLoading(false)
       }
     })
 
@@ -109,6 +115,7 @@ export function AuthProvider({ children }) {
     if (supabase) await supabase.auth.signOut()
     setProfile(null)
     setSession(null)
+    setLoading(false)
   }
 
   const refreshProfile = () => loadProfile(session?.user?.id)
