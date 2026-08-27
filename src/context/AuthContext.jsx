@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase) {
       setLoading(false)
       return undefined
     }

@@ -1,60 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
-import ProtectedRoute from './components/ProtectedRoute';
+import React from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
+import Navbar from './components/Navbar'
 
 // Pages
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import WorkerDashboard from './pages/WorkerDashboard';
-import EmployerDashboard from './pages/EmployerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import About from './pages/About'
+import FAQ from './pages/FAQ'
+import HowItWorks from './pages/HowItWorks'
+import Marketplace from './pages/Marketplace'
+import TaskDetail from './pages/TaskDetail'
+import WorkerDashboard from './pages/WorkerDashboard'
+import MySubmissions from './pages/MySubmissions'
+import Withdraw from './pages/Withdraw'
+import EmployerDashboard from './pages/EmployerDashboard'
+import CreateTask from './pages/CreateTask'
+import ReviewSubmissions from './pages/ReviewSubmissions'
+import Deposit from './pages/Deposit'
+import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { session, profile, role, loading } = useAuth()
 
-  useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function fetchProfile(uid) {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', uid)
-        .single();
-      
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error("Error loading profile:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ডেটা লোড হওয়ার সময় স্ক্রিন ক্র্যাশ রোধ করতে লোডিং স্ক্রিন দেখাবে
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-base-950 text-white">
@@ -63,62 +33,186 @@ export default function App() {
           <p className="text-sm text-white/60">Loading Taskly...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-base-950 text-slate-200">
-        <Navbar session={session} profile={profile} />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/auth" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
+    <div className="min-h-screen bg-base-950 text-slate-200">
+      <Navbar />
+      <Routes>
+        {/* Public Informational Pages */}
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
 
-          {/* Unified Dashboard Redirector */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute isAuth={!!session} userRole={profile?.role} isLoading={loading}>
-                {profile?.role === 'employer' ? <EmployerDashboard /> : <WorkerDashboard />}
-              </ProtectedRoute>
-            } 
-          />
+        {/* Auth Pages */}
+        <Route
+          path="/auth"
+          element={!session ? <Login /> : <Navigate to="/dashboard" replace />}
+        />
+        <Route
+          path="/login"
+          element={!session ? <Login /> : <Navigate to="/dashboard" replace />}
+        />
+        <Route
+          path="/register"
+          element={!session ? <Register /> : <Navigate to="/dashboard" replace />}
+        />
 
-          {/* Specific Employer Routes */}
-          <Route 
-            path="/employer/*" 
-            element={
-              <ProtectedRoute 
-                isAuth={!!session} 
-                userRole={profile?.role} 
-                allowedRoles={['employer']} 
-                isLoading={loading}
-              >
-                <EmployerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Specific Admin Routes */}
-          <Route 
-            path="/admin/*" 
-            element={
-              <ProtectedRoute 
-                isAuth={!!session} 
-                userRole={profile?.role} 
-                allowedRoles={['admin']} 
-                isLoading={loading}
-              >
+        {/* Unified Dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+              {role === 'admin' ? (
                 <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
+              ) : role === 'employer' ? (
+                <EmployerDashboard />
+              ) : (
+                <WorkerDashboard />
+              )}
+            </ProtectedRoute>
+          }
+        />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
-  );
+        {/* Worker & Marketplace Routes */}
+        <Route
+          path="/worker"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker', 'admin']}
+              isLoading={loading}
+            >
+              <WorkerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/marketplace"
+          element={
+            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+              <Marketplace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/task/:id"
+          element={
+            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+              <TaskDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks/:id"
+          element={
+            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+              <TaskDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-submissions"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker', 'admin']}
+              isLoading={loading}
+            >
+              <MySubmissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/withdraw"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker', 'admin']}
+              isLoading={loading}
+            >
+              <Withdraw />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Employer Routes */}
+        <Route
+          path="/employer"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['employer', 'admin']}
+              isLoading={loading}
+            >
+              <EmployerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-task"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['employer', 'admin']}
+              isLoading={loading}
+            >
+              <CreateTask />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/review-submissions"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['employer', 'admin']}
+              isLoading={loading}
+            >
+              <ReviewSubmissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/deposit"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['employer', 'admin']}
+              isLoading={loading}
+            >
+              <Deposit />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['admin']}
+              isLoading={loading}
+            >
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  )
 }

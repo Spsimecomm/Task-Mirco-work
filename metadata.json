@@ -1,0 +1,6 @@
+{
+  "name": "Taskly",
+  "description": "Micro Task & Earning Platform in Bangladesh connecting workers and employers for digital tasks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
