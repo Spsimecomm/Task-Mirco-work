@@ -3,13 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Pages (Assume these exist)
+// Pages
 import Navbar from './components/Navbar';
-import Landing from './pages/Landing';
+import Home from './pages/Home';
 import Auth from './pages/Auth';
 import WorkerDashboard from './pages/WorkerDashboard';
 import EmployerDashboard from './pages/EmployerDashboard';
-import AdminDashboard from './pages/AdminDashboard'; // For future use
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -60,7 +60,7 @@ export default function App() {
         <Navbar session={session} profile={profile} />
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Home />} />
           <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/dashboard" />} />
 
           {/* Unified Dashboard Redirector */}
