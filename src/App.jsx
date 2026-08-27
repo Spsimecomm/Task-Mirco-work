@@ -54,6 +54,18 @@ export default function App() {
     }
   }
 
+  // ডেটা লোড হওয়ার সময় স্ক্রিন ক্র্যাশ রোধ করতে লোডিং স্ক্রিন দেখাবে
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-base-950 text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-mint-400 border-t-transparent"></div>
+          <p className="text-sm text-white/60">Loading Taskly...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-base-950 text-slate-200">
