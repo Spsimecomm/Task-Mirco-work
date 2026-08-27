@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import {
   CheckCircle2,
   ArrowRight,
@@ -10,6 +10,7 @@ import {
   Zap,
   TrendingUp,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const features = [
   {
@@ -47,6 +48,14 @@ const steps = [
 ]
 
 export default function Home() {
+  const { user, role, loading } = useAuth()
+
+  // যদি ইউজার অলরেডি লগইন করা থাকে, তাকে ড্যাশবোর্ডে পাঠিয়ে দিন
+  if (!loading && user) {
+    if (role === 'admin') return <Navigate to="/admin" replace />
+    return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
+  }
+
   return (
     <main className="min-h-screen bg-base-950 text-white">
       {/* Hero */}
