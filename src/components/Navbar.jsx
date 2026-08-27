@@ -30,7 +30,17 @@ export default function Navbar() {
     { to: '/admin', label: 'Admin dashboard', icon: LayoutGrid },
   ]
 
-  const links = role === 'admin' ? adminLinks : role === 'employer' ? employerLinks : workerLinks
+  // কারেন্ট পাথ বা রোল অনুযায়ী সঠিক লিঙ্ক সিলেক্ট করা
+  const currentPath = window.location.pathname;
+  let links = workerLinks;
+  
+  if (role === 'admin' || currentPath.startsWith('/admin')) {
+    links = adminLinks;
+  } else if (role === 'employer' || currentPath.startsWith('/employer') || currentPath.startsWith('/create-task') || currentPath.startsWith('/review-submissions') || currentPath.startsWith('/deposit')) {
+    links = employerLinks;
+  } else if (role === 'worker' || currentPath.startsWith('/worker') || currentPath.startsWith('/marketplace') || currentPath.startsWith('/task') || currentPath.startsWith('/my-submissions') || currentPath.startsWith('/withdraw')) {
+    links = workerLinks;
+  }
 
   const handleSignOut = async () => {
     await signOut()
