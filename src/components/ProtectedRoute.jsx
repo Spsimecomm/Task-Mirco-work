@@ -19,10 +19,11 @@ export default function ProtectedRoute({ children, allowRole }) {
 
   // যদি রোল ডিফাইন করা থাকে এবং ইউজারের বর্তমান রোলের সাথে না মিলে
   if (allowRole && role && role !== allowRole) {
-    if (role === 'admin') return <Navigate to="/admin" replace />
-    if (role === 'employer') return <Navigate to="/employer" replace />
-    if (role === 'worker') return <Navigate to="/worker" replace />
-    return <Navigate to="/" replace />
+    const targetPath = role === 'admin' ? '/admin' : role === 'employer' ? '/employer' : '/worker'
+    
+    // ব্রাউজারকে ফুল রিলোড করে সঠিক ড্যাশবোর্ডে পাঠিয়ে দেবে (ক্যাশ বাইপাস করার জন্য)
+    window.location.href = targetPath
+    return null
   }
 
   return children
