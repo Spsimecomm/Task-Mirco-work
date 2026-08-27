@@ -1,183 +1,112 @@
-import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { Loader as Loader2 } from 'lucide-react'
-import { useAuth } from './context/AuthContext'
-import Navbar from './components/Navbar'
-import ProtectedRoute from './components/ProtectedRoute'
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase } from './lib/supabase';
+import ProtectedRoute from './components/ProtectedRoute';
 
-import Home from './pages/Home'
-import About from './pages/About'
-import HowItWorks from './pages/HowItWorks'
-import FAQ from './pages/FAQ'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import WorkerDashboard from './pages/WorkerDashboard'
-import EmployerDashboard from './pages/EmployerDashboard'
-import Marketplace from './pages/Marketplace'
-import TaskDetail from './pages/TaskDetail'
-import CreateTask from './pages/CreateTask'
-import MySubmissions from './pages/MySubmissions'
-import ReviewSubmissions from './pages/ReviewSubmissions'
-import Deposit from './pages/Deposit'
-import Withdraw from './pages/Withdraw'
-import AdminDashboard from './pages/AdminDashboard'
-
-function RoleRedirect() {
-  const { user, role, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-base-950">
-        <Loader2 className="animate-spin text-mint-400" size={28} />
-      </div>
-    )
-  }
-
-  if (!user) return <Navigate to="/login" replace />
-
-  if (role === 'admin') return <Navigate to="/admin" replace />
-
-  return (
-    <Navigate
-      to={role === 'employer' ? '/employer' : '/worker'}
-      replace
-    />
-  )
-}
+// Pages (Assume these exist)
+import Navbar from './components/Navbar';
+import Landing from './pages/Landing';
+import Auth from './pages/Auth';
+import WorkerDashboard from './pages/WorkerDashboard';
+import EmployerDashboard from './pages/EmployerDashboard';
+import AdminDashboard from './pages/AdminDashboard'; // For future use
 
 export default function App() {
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+      else setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchProfile(session.user.id);
+      else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function fetchProfile(uid) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', uid)
+        .single();
+      
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-base-950">
-      <Navbar />
+    <BrowserRouter>
+      <div className="min-h-screen bg-base-950 text-slate-200">
+        <Navbar session={session} profile={profile} />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/dashboard" />} />
 
-      <Routes>
-        {/* ================================
-            Public Pages
-        ================================= */}
+          {/* Unified Dashboard Redirector */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute isAuth={!!session} userRole={profile?.role} isLoading={loading}>
+                {profile?.role === 'employer' ? <EmployerDashboard /> : <WorkerDashboard />}
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route path="/" element={<Home />} />
+          {/* Specific Employer Routes */}
+          <Route 
+            path="/employer/*" 
+            element={
+              <ProtectedRoute 
+                isAuth={!!session} 
+                userRole={profile?.role} 
+                allowedRoles={['employer']} 
+                isLoading={loading}
+              >
+                <EmployerDashboard />
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route path="/about" element={<About />} />
+          {/* Specific Admin Routes */}
+          <Route 
+            path="/admin/*" 
+            element={
+              <ProtectedRoute 
+                isAuth={!!session} 
+                userRole={profile?.role} 
+                allowedRoles={['admin']} 
+                isLoading={loading}
+              >
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route path="/how-it-works" element={<HowItWorks />} />
-
-        <Route path="/faq" element={<FAQ />} />
-
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/register" element={<Register />} />
-
-        {/* ================================
-            Worker Pages
-        ================================= */}
-
-        <Route
-          path="/worker"
-          element={
-            <ProtectedRoute allowRole="worker">
-              <WorkerDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/marketplace"
-          element={
-            <ProtectedRoute allowRole="worker">
-              <Marketplace />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/task/:id"
-          element={
-            <ProtectedRoute allowRole="worker">
-              <TaskDetail />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/my-submissions"
-          element={
-            <ProtectedRoute allowRole="worker">
-              <MySubmissions />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/withdraw"
-          element={
-            <ProtectedRoute allowRole="worker">
-              <Withdraw />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ================================
-            Employer Pages
-        ================================= */}
-
-        <Route
-          path="/employer"
-          element={
-            <ProtectedRoute allowRole="employer">
-              <EmployerDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/create-task"
-          element={
-            <ProtectedRoute allowRole="employer">
-              <CreateTask />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/review-submissions"
-          element={
-            <ProtectedRoute allowRole="employer">
-              <ReviewSubmissions />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/deposit"
-          element={
-            <ProtectedRoute allowRole="employer">
-              <Deposit />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ================================
-            Admin
-        ================================= */}
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ================================
-            Fallback
-        ================================= */}
-
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
-      </Routes>
-    </div>
-  )
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
 }
