@@ -17,10 +17,13 @@ export default function ProtectedRoute({ children, allowRole }) {
   // ইউজার লগইন করা না থাকলে লগইন পেজে পাঠাবে
   if (!user) return <Navigate to="/login" replace />
 
-  // যদি নির্দিষ্ট রোল এলাو করা থাকে এবং ইউজারের রোল লোড হয়ে থাকে
-  if (allowRole && role && role !== allowRole) {
-    if (role === 'admin') return <Navigate to="/admin" replace />
-    return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
+  // যদি রোল লোড হওয়া পর্যন্ত অপেক্ষা করতে হয় বা রোল ম্যাচ না করে
+  if (allowRole && role) {
+    if (role !== allowRole) {
+      if (role === 'admin') return <Navigate to="/admin" replace />
+      if (role === 'employer') return <Navigate to="/employer" replace />
+      if (role === 'worker') return <Navigate to="/worker" replace />
+    }
   }
 
   return children
