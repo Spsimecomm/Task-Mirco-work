@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext'
 import { StatusBadge, ErrorBanner, EmptyState } from '../components/Shared'
 
 const PAYMENT_NUMBERS = {
-  bkash: '01712-345678',
-  nagad: '01812-345678',
+  bkash: '01617-177380',
+  nagad: 'Coming Soon',
 }
 
 const METHODS = [
