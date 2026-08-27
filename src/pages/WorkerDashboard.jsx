@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import StatCard from '../components/StatCard'
 import { StatusBadge, EmptyState } from '../components/Shared'
-import { formatMoney } from '../lib/utils'
 
 export default function WorkerDashboard() {
   const { user, profile } = useAuth()
@@ -62,9 +61,9 @@ export default function WorkerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={Wallet} label="Earnings" value={formatMoney(profile?.earnings)} tone="mint" hint="Approved & available" />
-        <StatCard icon={Clock} label="Pending" value={formatMoney(profile?.pending)} tone="amber" hint="Awaiting employer review" />
-        <StatCard icon={ArrowUpFromLine} label="Withdrawn" value={formatMoney(profile?.spent)} tone="indigo" hint="Total sent to your account" />
+        <StatCard icon={Wallet} label="Earnings" value={`$${Number(profile?.earnings ?? 0).toFixed(2)}`} tone="mint" hint="Approved & available" />
+        <StatCard icon={Clock} label="Pending" value={`$${Number(profile?.pending ?? 0).toFixed(2)}`} tone="amber" hint="Awaiting employer review" />
+        <StatCard icon={ArrowUpFromLine} label="Withdrawn" value={`$${Number(profile?.spent ?? 0).toFixed(2)}`} tone="indigo" hint="Total sent to your account" />
       </div>
 
       <div className="card">
@@ -97,7 +96,7 @@ export default function WorkerDashboard() {
                   <p className="text-xs text-slate-500 mt-0.5">{s.tasks?.category} · {new Date(s.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-mint-400">{formatMoney(s.tasks?.reward)}</span>
+                  <span className="text-sm font-semibold text-mint-400">${Number(s.tasks?.reward ?? 0).toFixed(2)}</span>
                   <StatusBadge status={s.status} />
                 </div>
               </li>
@@ -108,4 +107,3 @@ export default function WorkerDashboard() {
     </div>
   )
 }
-

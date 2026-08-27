@@ -3,7 +3,6 @@ import { Check, X, Loader as Loader2, Inbox } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, EmptyState, ErrorBanner, isSafeUrl } from '../components/Shared'
-import { formatMoney, handleSanitizedPaste } from '../lib/utils'
 
 export default function ReviewSubmissions() {
   const { user, refreshProfile } = useAuth()
@@ -126,7 +125,7 @@ export default function ReviewSubmissions() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-semibold text-mint-400">{formatMoney(s.tasks?.reward)}</span>
+                  <span className="text-sm font-semibold text-mint-400">${Number(s.tasks?.reward ?? 0).toFixed(2)}</span>
                   <StatusBadge status={s.status} />
                 </div>
               </div>
@@ -154,7 +153,6 @@ export default function ReviewSubmissions() {
                         placeholder="Reason for rejection…"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        onPaste={(e) => handleSanitizedPaste(e, reason, setReason, false)}
                       />
                       <div className="flex gap-2">
                         <button onClick={() => handleReject(s.id)} disabled={busyId === s.id} className="btn-secondary">

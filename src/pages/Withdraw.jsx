@@ -3,7 +3,6 @@ import { ArrowUpFromLine, Loader2, CheckCircle2, Smartphone } from 'lucide-react
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, ErrorBanner, EmptyState } from '../components/Shared'
-import { handleSanitizedPaste, formatMoney } from '../lib/utils'
 
 const METHODS = [
   { id: 'bkash', label: 'bKash', color: 'bg-pink-500/10 text-pink-400 border-pink-500/30' },
@@ -39,19 +38,13 @@ export default function Withdraw() {
     loadRequests()
   }, [loadRequests])
 
-  const handleInputKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccess(false)
     const amt = Number(amount)
     if (!amt || amt < MIN_WITHDRAWAL) {
-      setError(`Minimum withdrawal is ${formatMoney(MIN_WITHDRAWAL)}.`)
+      setError(`Minimum withdrawal is $${MIN_WITHDRAWAL.toFixed(2)}.`)
       return
     }
     if (amt > Number(profile?.earnings ?? 0)) {
@@ -87,7 +80,7 @@ export default function Withdraw() {
       <div>
         <h1 className="text-2xl font-bold">Withdraw earnings</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Available: <span className="text-mint-400 font-semibold">{formatMoney(profile?.earnings)}</span>
+          Available: <span className="text-mint-400 font-semibold">${Number(profile?.earnings ?? 0).toFixed(2)}</span>
         </p>
       </div>
 
@@ -102,8 +95,6 @@ export default function Withdraw() {
             placeholder={`Minimum $${MIN_WITHDRAWAL.toFixed(2)}`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            onPaste={(e) => handleSanitizedPaste(e, amount, setAmount, true)}
-            onKeyDown={handleInputKeyDown}
           />
         </div>
 
@@ -111,15 +102,15 @@ export default function Withdraw() {
           <div className="rounded-lg border border-base-700 bg-base-900 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">Requested</span>
-              <span className="text-white font-medium">{formatMoney(requestedAmount)}</span>
+              <span className="text-white font-medium">${requestedAmount.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">Fee ({(WITHDRAWAL_FEE_RATE * 100).toFixed(0)}%)</span>
-              <span className="text-signal-amber font-medium">-{formatMoney(withdrawalFee)}</span>
+              <span className="text-signal-amber font-medium">-${withdrawalFee.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-base-700 pt-2">
               <span className="text-white font-semibold">You will get</span>
-              <span className="text-mint-400 font-bold">{formatMoney(netAmount)}</span>
+              <span className="text-mint-400 font-bold">${netAmount.toFixed(2)}</span>
             </div>
           </div>
         )}
@@ -153,8 +144,6 @@ export default function Withdraw() {
             placeholder="01XXXXXXXXX"
             value={account}
             onChange={(e) => setAccount(e.target.value)}
-            onPaste={(e) => handleSanitizedPaste(e, account, setAccount, true)}
-            onKeyDown={handleInputKeyDown}
           />
         </div>
 
@@ -187,8 +176,8 @@ export default function Withdraw() {
             {requests.map((r) => (
               <li key={r.id} className="flex items-center justify-between px-5 py-3 text-sm">
                 <div>
-                  <p className="text-white font-medium">{formatMoney(r.amount)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
-                  <p className="text-xs text-slate-500">Fee: {formatMoney(r.fee_amount)} · You get: {formatMoney(r.net_amount ?? r.amount)}</p>
+                  <p className="text-white font-medium">${Number(r.amount).toFixed(2)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                  <p className="text-xs text-slate-500">Fee: ${Number(r.fee_amount ?? 0).toFixed(2)} · You get: ${Number(r.net_amount ?? r.amount).toFixed(2)}</p>
                   <p className="text-xs text-slate-500">{r.account_details} · {new Date(r.created_at).toLocaleString()}</p>
                 </div>
                 <StatusBadge status={r.status} />
@@ -200,4 +189,3 @@ export default function Withdraw() {
     </div>
   )
 }
-
