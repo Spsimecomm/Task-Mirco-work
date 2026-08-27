@@ -6,7 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Pages
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Auth from './pages/Auth';
+import Login from './pages/Login';
 import WorkerDashboard from './pages/WorkerDashboard';
 import EmployerDashboard from './pages/EmployerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -61,7 +61,7 @@ export default function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/dashboard" />} />
+          <Route path="/auth" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
 
           {/* Unified Dashboard Redirector */}
           <Route 
