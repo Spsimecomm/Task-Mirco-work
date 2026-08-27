@@ -1,5 +1,8 @@
 import React from 'react'
 import { Inbox } from 'lucide-react'
+import { isSafeUrl, formatMoney } from '../lib/utils'
+
+export { isSafeUrl, formatMoney }
 
 const statusStyles = {
   pending: 'bg-signal-amber/10 text-signal-amber',
@@ -40,7 +43,3 @@ export function ErrorBanner({ message }) {
   )
 }
 
-export function isSafeUrl(url) {
-  if (!url) return false
-  return /^https?:\/\//i.test(url)
-}

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, EmptyState, isSafeUrl } from '../components/Shared'
+import { formatMoney } from '../lib/utils'
 import { ClipboardCheck } from 'lucide-react'
 
 export default function MySubmissions() {
@@ -65,7 +66,7 @@ export default function MySubmissions() {
                   <p className="text-xs text-slate-500 mt-0.5">{s.tasks?.category} · {new Date(s.created_at).toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-semibold text-mint-400">${Number(s.tasks?.reward ?? 0).toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-mint-400">{formatMoney(s.tasks?.reward)}</span>
                   <StatusBadge status={s.status} />
                 </div>
               </div>

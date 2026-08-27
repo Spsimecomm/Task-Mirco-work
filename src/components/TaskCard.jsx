@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Users, Tag } from 'lucide-react'
+import { formatMoney } from '../lib/utils'
 
 const categoryColors = {
   'Social Media': 'bg-signal-indigo/10 text-signal-indigo',
@@ -22,7 +23,7 @@ export default function TaskCard({ task }) {
           {task.category}
         </span>
         <span className="text-lg font-display font-bold text-mint-400 whitespace-nowrap">
-          ${Number(task.reward).toFixed(2)}
+          {formatMoney(task.reward)}
         </span>
       </div>
       <h3 className="font-semibold text-white leading-snug group-hover:text-mint-400 transition line-clamp-2">
@@ -39,3 +40,4 @@ export default function TaskCard({ task }) {
     </Link>
   )
 }
+

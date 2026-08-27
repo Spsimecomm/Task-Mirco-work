@@ -3,6 +3,7 @@ import { ArrowDownToLine, Loader2, CheckCircle2, Smartphone } from 'lucide-react
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge, ErrorBanner, EmptyState } from '../components/Shared'
+import { handleSanitizedPaste, formatMoney } from '../lib/utils'
 
 const PAYMENT_NUMBERS = {
   bkash: '01712-345678',
@@ -67,6 +68,7 @@ export default function Deposit() {
       setAmount('')
       setSenderMobile('')
       setTrxId('')
+      await refreshProfile()
       await loadRequests()
     } catch (err) {
       setError(err.message || 'Could not submit deposit request.')
@@ -79,12 +81,18 @@ export default function Deposit() {
     navigator.clipboard?.writeText(text)
   }
 
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Deposit funds</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Current balance: <span className="text-mint-400 font-semibold">${Number(profile?.deposited ?? 0).toFixed(2)}</span>
+          Current balance: <span className="text-mint-400 font-semibold">{formatMoney(profile?.deposited)}</span>
         </p>
       </div>
 
@@ -135,6 +143,8 @@ export default function Deposit() {
             placeholder="Enter deposit amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            onPaste={(e) => handleSanitizedPaste(e, amount, setAmount, true)}
+            onKeyDown={handleInputKeyDown}
           />
         </div>
 
@@ -146,6 +156,8 @@ export default function Deposit() {
             placeholder="01XXXXXXXXX"
             value={senderMobile}
             onChange={(e) => setSenderMobile(e.target.value)}
+            onPaste={(e) => handleSanitizedPaste(e, senderMobile, setSenderMobile, true)}
+            onKeyDown={handleInputKeyDown}
           />
         </div>
 
@@ -157,6 +169,8 @@ export default function Deposit() {
             placeholder="Enter the TrxID from your SMS"
             value={trxId}
             onChange={(e) => setTrxId(e.target.value)}
+            onPaste={(e) => handleSanitizedPaste(e, trxId, setTrxId, true)}
+            onKeyDown={handleInputKeyDown}
           />
         </div>
 
@@ -189,7 +203,7 @@ export default function Deposit() {
             {requests.map((r) => (
               <li key={r.id} className="flex items-center justify-between px-5 py-3 text-sm">
                 <div>
-                  <p className="text-white font-medium">${Number(r.amount).toFixed(2)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                  <p className="text-white font-medium">{formatMoney(r.amount)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
                   <p className="text-xs text-slate-500">TrxID: {r.trx_id} · {new Date(r.created_at).toLocaleString()}</p>
                   {r.rejection_reason && (
                     <p className="text-xs text-signal-rose mt-1">Rejected: {r.rejection_reason}</p>
@@ -204,3 +218,4 @@ export default function Deposit() {
     </div>
   )
 }
+

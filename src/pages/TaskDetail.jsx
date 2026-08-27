@@ -4,6 +4,7 @@ import { ArrowLeft, ClipboardList, Users, Loader2, CheckCircle2, Upload, X, Imag
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { ErrorBanner } from '../components/Shared'
+import { handleSanitizedPaste, formatMoney } from '../lib/utils'
 
 const categoryColors = {
   'Social Media': 'bg-signal-indigo/10 text-signal-indigo',
@@ -132,7 +133,7 @@ export default function TaskDetail() {
           <span className={`badge ${categoryColors[task.category] || 'bg-base-700 text-slate-300'}`}>
             {task.category}
           </span>
-          <span className="text-2xl font-display font-bold text-mint-400">${Number(task.reward).toFixed(2)}</span>
+          <span className="text-2xl font-display font-bold text-mint-400">{formatMoney(task.reward)}</span>
         </div>
         <h1 className="text-xl font-bold text-white">{task.title}</h1>
         <p className="text-sm text-slate-400 flex items-center gap-1.5">
@@ -178,23 +179,7 @@ export default function TaskDetail() {
               placeholder="Describe what you did to complete this task (copy/paste URLs, proof notes, etc.)…"
               value={proofText}
               onChange={(e) => setProofText(e.target.value)}
-              onPaste={(e) => {
-                const text = e.clipboardData?.getData('text/plain')
-                if (text !== undefined && text !== null) {
-                  e.preventDefault()
-                  const clean = text.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-                  const target = e.target
-                  const start = target.selectionStart ?? target.value.length
-                  const end = target.selectionEnd ?? target.value.length
-                  const updated = proofText.slice(0, start) + clean + proofText.slice(end)
-                  setProofText(updated)
-                  requestAnimationFrame(() => {
-                    if (target?.setSelectionRange) {
-                      target.setSelectionRange(start + clean.length, start + clean.length)
-                    }
-                  })
-                }
-              }}
+              onPaste={(e) => handleSanitizedPaste(e, proofText, setProofText, false)}
             />
           </div>
           <div>
@@ -243,6 +228,10 @@ export default function TaskDetail() {
               value={proofUrl}
               disabled={!!imageFile}
               onChange={(e) => setProofUrl(e.target.value)}
+              onPaste={(e) => handleSanitizedPaste(e, proofUrl, setProofUrl, true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.preventDefault()
+              }}
             />
           </div>
           <ErrorBanner message={error} />
@@ -255,3 +244,4 @@ export default function TaskDetail() {
     </div>
   )
 }
+
