@@ -50,7 +50,7 @@ const steps = [
 export default function Home() {
   const { user, role, loading } = useAuth()
 
-  // যদি ইউজার অলরেডি লগইন করা থাকে, তাকে ড্যাশবোর্ডে পাঠিয়ে দিন
+  // যদি ইউজার অলরেডি লগইন করা থাকে, তাকে ড্যাশবোর্ডে পাঠিয়ে দিন
   if (!loading && user) {
     if (role === 'admin') return <Navigate to="/admin" replace />
     return <Navigate to={role === 'employer' ? '/employer' : '/worker'} replace />
@@ -81,7 +81,7 @@ export default function Home() {
 
             <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
-                to="/register"
+                to="/auth"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-mint-400 px-6 py-3.5 font-bold text-base-950 transition hover:bg-mint-300"
               >
                 Get Started
@@ -89,7 +89,7 @@ export default function Home() {
               </Link>
 
               <Link
-                to="/login"
+                to="/auth"
                 className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10"
               >
                 Sign In
@@ -207,7 +207,7 @@ export default function Home() {
             </p>
 
             <Link
-              to="/register"
+              to="/auth"
               className="mt-6 inline-flex items-center gap-2 font-bold text-mint-400"
             >
               Create Worker Account
@@ -228,7 +228,7 @@ export default function Home() {
             </p>
 
             <Link
-              to="/register"
+              to="/auth"
               className="mt-6 inline-flex items-center gap-2 font-bold text-mint-400"
             >
               Create Employer Account
@@ -250,7 +250,7 @@ export default function Home() {
           </p>
 
           <Link
-            to="/register"
+            to="/auth"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-mint-400 px-7 py-4 font-bold text-base-950 transition hover:bg-mint-300"
           >
             Join Taskly
@@ -265,11 +265,11 @@ export default function Home() {
           <p>© {new Date().getFullYear()} Taskly. All rights reserved.</p>
 
           <div className="flex gap-5">
-            <Link to="/login" className="hover:text-white">
+            <Link to="/auth" className="hover:text-white">
               Login
             </Link>
 
-            <Link to="/register" className="hover:text-white">
+            <Link to="/auth" className="hover:text-white">
               Register
             </Link>
           </div>
