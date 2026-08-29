@@ -3,47 +3,231 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-main: #0F172A;
+    --bg-sub: #141E33;
+    --bg-card: #1E293B;
+    --bg-inner: #0F172A;
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --border-divider: rgba(255, 255, 255, 0.1);
+    --text-heading: #F1F5F9;
+    --text-body: #94A3B8;
+    --text-muted: #64748B;
+    --accent-primary: #22C55E;
+    --accent-primary-hover: #16A34A;
+    --accent-primary-text: #0F172A;
+    --input-bg: #0F172A;
+    --input-border: rgba(255, 255, 255, 0.1);
+    --input-placeholder: #64748B;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.15);
+    --tab-inactive-bg: #1E293B;
+    --tab-inactive-border: rgba(255, 255, 255, 0.1);
+    --tab-inactive-text: #94A3B8;
+    --sub-box-bg: #0F172A;
+    --sub-box-border: rgba(255, 255, 255, 0.1);
+  }
+
+  html.light, [data-theme="light"] {
+    --bg-main: #F1F5F9;
+    --bg-sub: #E2E8F0;
+    --bg-card: #FFFFFF;
+    --bg-inner: #F1F5F9;
+    --border-subtle: #CBD5E1;
+    --border-divider: #CBD5E1;
+    --text-heading: #1E293B;
+    --text-body: #64748B;
+    --text-muted: #64748B;
+    --accent-primary: #16A34A;
+    --accent-primary-hover: #15803D;
+    --accent-primary-text: #FFFFFF;
+    --input-bg: #FFFFFF;
+    --input-border: #CBD5E1;
+    --input-placeholder: #94A3B8;
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    --tab-inactive-bg: #E2E8F0;
+    --tab-inactive-border: #CBD5E1;
+    --tab-inactive-text: #64748B;
+    --sub-box-bg: #F8FAFC;
+    --sub-box-border: #CBD5E1;
+  }
+
   html {
     color-scheme: dark;
+    background-color: var(--bg-main);
+  }
+  html.light {
+    color-scheme: light;
+    background-color: #F1F5F9;
   }
   body {
-    @apply bg-base-950 text-slate-200 font-body antialiased;
-    background-image: radial-gradient(circle at 20% 0%, rgba(124,140,255,0.06), transparent 40%),
-      radial-gradient(circle at 90% 10%, rgba(52,224,161,0.05), transparent 35%);
+    background-color: var(--bg-main);
+    color: var(--text-body);
+    @apply font-body antialiased;
+    background-image: radial-gradient(circle at 15% 0%, rgba(34, 197, 94, 0.04), transparent 30%),
+      radial-gradient(circle at 85% 15%, rgba(129, 140, 248, 0.04), transparent 25%);
     background-attachment: fixed;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
-  h1, h2, h3, h4 {
-    @apply font-display text-white;
+  html.light body {
+    background-color: #F1F5F9;
+    background-image: none;
+    color: #64748B;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-heading);
+    @apply font-display;
+  }
+  html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
+    color: #1E293B;
+  }
+  p {
+    color: var(--text-body);
+  }
+  html.light p {
+    color: #64748B;
   }
   ::selection {
-    @apply bg-mint-500/30 text-white;
+    background-color: rgba(34, 197, 94, 0.3);
+    color: #F1F5F9;
+  }
+  html.light ::selection {
+    background-color: #DCFCE7;
+    color: #166534;
   }
   *:focus-visible {
-    outline: 2px solid #34E0A1;
+    outline: 2px solid var(--accent-primary);
     outline-offset: 2px;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-base-850 border border-base-700 rounded-xl2 shadow-sm;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--card-shadow);
+    @apply rounded-xl transition duration-200;
   }
+  html.light .card {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(34, 197, 94, 0.4);
+  }
+  html.light .card-hover:hover {
+    border-color: #16A34A;
+    box-shadow: 0 8px 16px -2px rgba(15, 23, 42, 0.08);
+  }
+
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-mint-500 text-base-950 font-semibold px-4 py-2.5 text-sm transition hover:bg-mint-400 disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: #22C55E;
+    color: #0F172A;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-2.5 text-sm transition-all duration-150 hover:bg-emerald-600 hover:text-white active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
   }
+  html.light .btn-primary {
+    background-color: #16A34A;
+    color: #FFFFFF;
+  }
+  html.light .btn-primary:hover {
+    background-color: #15803D;
+    color: #FFFFFF;
+  }
+  html.light .btn-primary:active {
+    background-color: #166534;
+  }
+
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-base-700 text-slate-100 font-medium px-4 py-2.5 text-sm transition hover:bg-base-600 border border-base-600;
+    background-color: rgba(51, 65, 85, 0.4);
+    color: var(--text-heading);
+    border: 1px solid var(--border-subtle);
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-medium px-4 py-2.5 text-sm transition hover:bg-slate-700/50;
   }
+  html.light .btn-secondary {
+    background-color: #E2E8F0;
+    color: #1E293B;
+    border: 1px solid #CBD5E1;
+  }
+  html.light .btn-secondary:hover {
+    background-color: #CBD5E1;
+  }
+
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg text-slate-300 font-medium px-3 py-2 text-sm transition hover:bg-base-800 hover:text-white;
+    color: var(--text-body);
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-medium px-3 py-2 text-sm transition hover:bg-slate-800 hover:text-white;
   }
+  html.light .btn-ghost {
+    color: #64748B;
+  }
+  html.light .btn-ghost:hover {
+    background-color: #E2E8F0;
+    color: #1E293B;
+  }
+
   .input {
-    @apply w-full rounded-lg bg-base-900 border border-base-600 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-mint-500/60 focus:ring-2 focus:ring-mint-500/20;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-heading);
+    @apply w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition;
   }
+  .input::placeholder {
+    color: var(--input-placeholder);
+  }
+  .input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+  }
+  html.light .input {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    color: #1E293B;
+  }
+  html.light .input::placeholder {
+    color: #94A3B8;
+  }
+  html.light .input:focus {
+    border-color: #16A34A;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+  }
+
   .label {
-    @apply block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide;
+    color: var(--text-body);
+    @apply block text-xs font-semibold mb-1.5 uppercase tracking-wider;
   }
+  html.light .label {
+    color: #475569;
+  }
+
   .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-semibold;
+  }
+
+  .sub-box {
+    background-color: var(--sub-box-bg);
+    border: 1px solid var(--sub-box-border);
+    @apply rounded-xl;
+  }
+  html.light .sub-box {
+    background-color: #F8FAFC;
+    border: 1px solid #CBD5E1;
+  }
+
+  .tab-inactive {
+    background-color: var(--tab-inactive-bg);
+    border: 1px solid var(--tab-inactive-border);
+    color: var(--tab-inactive-text);
+  }
+  html.light .tab-inactive {
+    background-color: #E2E8F0;
+    border: 1px solid #CBD5E1;
+    color: #64748B;
   }
 }
+
+

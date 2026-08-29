@@ -241,10 +241,10 @@ export default function CreateTask() {
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Post a task</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">Post a task</h1>
+          <p className="text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">
             Available Balance:{' '}
-            <span className="text-mint-400 font-semibold">${userBalance.toFixed(2)}</span>
+            <span className="text-emerald-600 dark:text-mint-500 font-bold">${userBalance.toFixed(2)}</span>
           </p>
         </div>
 
@@ -252,7 +252,7 @@ export default function CreateTask() {
           <button
             type="button"
             onClick={handleClearDraft}
-            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-signal-rose transition self-start sm:self-auto bg-base-900 border border-base-700 px-2.5 py-1.5 rounded-lg"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1E293B] dark:text-slate-400 hover:text-rose-600 transition self-start sm:self-auto bg-[#E2E8F0] dark:bg-slate-900 border border-[#CBD5E1] dark:border-white/10 px-2.5 py-1.5 rounded-lg"
             title="Reset form and remove saved draft"
           >
             <RotateCcw size={13} /> Clear Draft
@@ -261,20 +261,20 @@ export default function CreateTask() {
       </div>
 
       {pasteNotice && (
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-mint-500/10 border border-mint-500/30 text-mint-400 text-xs animate-fade-in">
+        <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#DCFCE7] dark:bg-mint-500/10 border border-[#BBF7D0] dark:border-mint-500/30 text-[#166534] dark:text-mint-500 text-xs animate-fade-in font-medium">
           <Sparkles size={14} className="shrink-0" />
           <span>{pasteNotice}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card p-6 space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="card p-6 space-y-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10" noValidate>
         {/* Task Title */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="label mb-0" htmlFor="task-title">
-              Task title <span className="text-signal-rose">*</span>
+              Task title <span className="text-rose-600">*</span>
             </label>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-[#64748B] dark:text-slate-400">
               {form.title.length}/120
             </span>
           </div>
@@ -295,7 +295,7 @@ export default function CreateTask() {
         {/* Category Selection */}
         <div>
           <label className="label" htmlFor="task-category">
-            Category <span className="text-signal-rose">*</span>
+            Category <span className="text-rose-600">*</span>
           </label>
           <select
             id="task-category"
@@ -315,9 +315,9 @@ export default function CreateTask() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="label mb-0" htmlFor="task-description">
-              Task Description <span className="text-signal-rose">*</span>
+              Task Description <span className="text-rose-600">*</span>
             </label>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-[#64748B] dark:text-slate-400">
               Supports pasted text & line breaks
             </span>
           </div>
@@ -338,9 +338,9 @@ export default function CreateTask() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="label mb-0" htmlFor="task-proof-instructions">
-              Required Proof Instructions <span className="text-signal-rose">*</span>
+              Required Proof Instructions <span className="text-rose-600">*</span>
             </label>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-[#64748B] dark:text-slate-400">
               What proof should worker submit?
             </span>
           </div>
@@ -361,7 +361,7 @@ export default function CreateTask() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="label" htmlFor="task-reward">
-              Reward per worker (USD) <span className="text-signal-rose">*</span>
+              Reward per worker (USD) <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">
@@ -385,7 +385,7 @@ export default function CreateTask() {
 
           <div>
             <label className="label" htmlFor="task-slots">
-              Number of workers <span className="text-signal-rose">*</span>
+              Number of workers <span className="text-rose-600">*</span>
             </label>
             <input
               id="task-slots"
@@ -403,27 +403,27 @@ export default function CreateTask() {
         </div>
 
         {/* Budget Breakdown */}
-        <div className="rounded-lg bg-base-900 border border-base-700 p-4 space-y-2">
+        <div className="rounded-xl bg-[#F8FAFC] dark:bg-slate-900/60 border border-[#CBD5E1] dark:border-white/10 p-5 space-y-2.5">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Total Budget Required:</span>
+            <span className="text-[#64748B] dark:text-slate-400 font-medium">Total Budget Required:</span>
             <span
-              className={`font-bold font-mono text-base ${
-                insufficientFunds ? 'text-signal-rose' : 'text-mint-400'
+              className={`font-display font-extrabold text-lg sm:text-xl tracking-tight ${
+                insufficientFunds ? 'text-rose-600' : 'text-emerald-600 dark:text-mint-500'
               }`}
             >
               ${totalCost.toFixed(2)}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-base-800">
+          <div className="flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400 pt-2 border-t border-[#CBD5E1] dark:border-white/10">
             <span>Formula:</span>
-            <span>
+            <span className="font-semibold text-[#1E293B] dark:text-slate-300">
               {Number(form.slots) || 0} slots × ${Number(form.reward || 0).toFixed(2)}
             </span>
           </div>
 
           {insufficientFunds && (
-            <div className="flex items-start gap-2 text-xs text-signal-rose pt-1">
+            <div className="flex items-start gap-2 text-xs text-rose-600 font-medium pt-1">
               <AlertCircle size={14} className="shrink-0 mt-0.5" />
               <span>
                 Budget exceeds your balance (${userBalance.toFixed(2)}). Please reduce the reward/slots or deposit funds.
@@ -438,7 +438,7 @@ export default function CreateTask() {
           <button
             type="submit"
             disabled={loading || insufficientFunds}
-            className="btn-primary w-full py-3"
+            className="btn-primary w-full py-3.5 text-sm font-bold rounded-xl shadow-md"
           >
             {loading ? (
               <>

@@ -37,7 +37,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-base-950 text-slate-200">
+    <div className="min-h-screen">
       <Navbar />
       <Routes>
         {/* Public Informational Pages */}

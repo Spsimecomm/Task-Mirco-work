@@ -9,7 +9,7 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 // In-Memory Mock Database & Service (Used when Supabase credentials are unset)
 // ============================================================================
 
-const STORAGE_KEY = 'taskly_mock_db_v1'
+const STORAGE_KEY = 'taskly_mock_db_v2'
 
 const initialMockData = {
   profiles: [
@@ -47,8 +47,8 @@ const initialMockData = {
       employer_id: 'usr-employer-1',
       title: 'Follow our official Facebook page & share latest post',
       category: 'Social Media',
-      description: 'Visit our Facebook page, click the Follow button, and publicly share the pinned post to your personal timeline.',
-      proof_instructions: 'Provide your Facebook profile link and a screenshot of the shared post on your timeline.',
+      description: 'ধাপ ১: আমাদের অফিসিয়াল ফেসবুক পেইজে প্রবেশ করে ফলো/লাইক দিন।\nধাপ ২: পিন করা পোস্টটি আপনার পার্সোনাল টাইমলাইনে পাবলিকভাবে শেয়ার করুন।\nরিওয়ার্ড: প্রতিটি ভেরিফায়েড সাবমিশনে সরাসরি $0.75 জমা হবে।\nগুরুত্বপূর্ণ: শেয়ার করা পোস্টের অডিয়েন্স অবশ্যই পাবলিক হতে হবে এবং কোনো ফেক একাউন্ট গ্রহণযোগ্য নয়।',
+      proof_instructions: 'ধাপ ১: আপনার ফেসবুক প্রোফাইল লিঙ্ক ইনপুট বক্সে দিন।\nধাপ ২: টাইমলাইনে শেয়ার করা পোস্টের স্পষ্ট স্ক্রিনশট আপলোড করুন।',
       reward: 0.75,
       slots_total: 50,
       slots_filled: 22,
@@ -60,8 +60,8 @@ const initialMockData = {
       employer_id: 'usr-employer-1',
       title: 'Download Android app and sign up with referral code',
       category: 'Sign Up',
-      description: 'Download the app from Google Play, complete phone number registration, and verify OTP.',
-      proof_instructions: 'Submit the screenshot of your profile screen showing the verified badge and your user ID.',
+      description: 'ধাপ ১: গুগল প্লে-স্টোর থেকে অ্যাপটি ডাউনলোড করে ইনস্টল করুন।\nধাপ ২: আপনার মোবাইল নম্বর দিয়ে রেজিস্ট্রেশন ও OTP ভেরিফিকেশন সম্পন্ন করুন।\nধাপ ৩: রেফারেল কোড অপশনে TASKLY2026 কোডটি প্রবেশ করান।\nগুরুত্বপূর্ণ: পূর্বে এই ডিভাইসে অ্যাপটি ইন্সটল করা থাকলে নতুন সাবমিশন বাতিল হবে।',
+      proof_instructions: 'ধাপ ১: প্রোফাইল সেকশনের স্ক্রিনশট নিন যেখানে আপনার ইউজার আইডি ও ভেরিফায়েড ব্যাজ দেখা যাচ্ছে।\nধাপ ২: আপনার রেজিস্টার্ড মোবাইল নম্বর লিখে সাবমিট করুন।',
       reward: 1.50,
       slots_total: 30,
       slots_filled: 14,
@@ -73,8 +73,8 @@ const initialMockData = {
       employer_id: 'usr-employer-1',
       title: 'Watch 3-minute tech review video and leave genuine comment',
       category: 'Video Watching',
-      description: 'Watch the entire video without skipping, hit like, subscribe to channel, and write a 10+ word relevant comment.',
-      proof_instructions: 'Send your YouTube channel username and a screenshot of your comment on the video.',
+      description: 'ধাপ ১: সম্পূর্ণ ৩ মিনিটের ভিডিওটি কোনো অংশ স্কিপ না করে দেখুন।\nধাপ ২: ভিডিওটিতে লাইক দিন এবং চ্যানেলে সাবস্ক্রাইব করুন।\nধাপ ৩: ভিডিও সম্পর্কিত গঠনমূলক ও বাস্তবসম্মত একটি মন্তব্য (কমপক্ষে ১০ শব্দ) লিখুন।\nরিওয়ার্ড: প্রতিটি সফল যাচাইকৃত কমেন্টের জন্য $0.45 রিওয়ার্ড।',
+      proof_instructions: 'ধাপ ১: আপনার ইউটিউব চ্যানেল বা ইউজারনেম উল্লেখ করুন।\nধাপ ২: আপনার করা কমেন্ট ও সাবস্ক্রাইব করা স্ক্রিনের স্ক্রিনশট দিন।',
       reward: 0.45,
       slots_total: 100,
       slots_filled: 68,
@@ -86,8 +86,8 @@ const initialMockData = {
       employer_id: 'usr-employer-1',
       title: 'Copy & Paste Bangladeshi ecommerce product data to Google Sheet',
       category: 'Data Entry',
-      description: 'Extract title, current price, SKU, and category from 10 specified product links into the provided template.',
-      proof_instructions: 'Provide the view-only link to your completed Google Sheet.',
+      description: 'ধাপ ১: নির্ধারিত ১০টি বাংলাদেশি ই-কমার্স প্রোডাক্ট লিঙ্কে প্রবেশ করুন।\nধাপ ২: প্রতিটি পণ্যের নাম, বর্তমান মূল্য, SKU কোড ও ক্যাটাগরি গুগল শীটে এন্ট্রি করুন।\nগুরুত্বপূর্ণ: স্পেলিং ও প্রাইসিং নির্ভুল হতে হবে।',
+      proof_instructions: 'ধাপ ১: আপনার তৈরি করা গুগল শীটের View-Only শেয়ারেবল লিঙ্ক দিন।',
       reward: 2.20,
       slots_total: 20,
       slots_filled: 8,

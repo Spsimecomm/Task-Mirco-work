@@ -57,28 +57,28 @@ const faqs = [
 
 function FAQItem({ faq, isOpen, onClick }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+    <div className="overflow-hidden card">
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center justify-between gap-5 px-6 py-5 text-left transition hover:bg-white/[0.03]"
+        className="flex w-full items-center justify-between gap-5 px-6 py-5 text-left transition hover:bg-white/[0.02]"
         aria-expanded={isOpen}
       >
-        <span className="text-base font-bold text-white sm:text-lg">
+        <span className="text-base font-bold text-[#F1F5F9] sm:text-lg">
           {faq.question}
         </span>
 
         <ChevronDown
           size={20}
-          className={`shrink-0 text-mint-400 transition-transform duration-200 ${
+          className={`shrink-0 text-mint-500 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="border-t border-white/5 px-6 pb-6 pt-4">
-          <p className="text-sm leading-7 text-white/50">
+        <div className="border-t border-white/10 px-6 pb-6 pt-4">
+          <p className="text-sm leading-7 text-slate-400">
             {faq.answer}
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function FAQ() {
   }
 
   return (
-    <main className="min-h-screen bg-base-950 text-white">
+    <main className="min-h-screen text-[#F1F5F9]">
       {/* FAQ Structured Data for Search Engines */}
       <script
         type="application/ld+json"
@@ -116,21 +116,21 @@ export default function FAQ() {
       />
 
       {/* Hero */}
-      <section className="border-b border-white/5">
+      <section className="border-b border-white/10">
         <div className="mx-auto max-w-4xl px-5 py-20 text-center sm:px-6 lg:py-28">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-mint-400/10 text-mint-400">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-mint-500/10 text-mint-500">
             <HelpCircle size={28} />
           </div>
 
-          <p className="mt-6 text-sm font-bold uppercase tracking-wider text-mint-400">
+          <p className="mt-6 text-sm font-bold uppercase tracking-wider text-mint-500">
             Frequently Asked Questions
           </p>
 
-          <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-[#F1F5F9] sm:text-5xl">
             Everything you need to know about Taskly
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-white/55 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-400 sm:text-lg">
             Find answers to common questions about tasks, workers, employers,
             submissions, earnings, and using the Taskly platform.
           </p>
@@ -154,13 +154,13 @@ export default function FAQ() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-white/5 py-20">
+      <section className="border-t border-white/10 py-20">
         <div className="mx-auto max-w-4xl px-5 text-center">
-          <h2 className="text-3xl font-extrabold sm:text-4xl">
+          <h2 className="text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
             Still have questions?
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-white/50">
+          <p className="mx-auto mt-4 max-w-2xl text-slate-400">
             Explore the platform or create an account to get started with
             Taskly.
           </p>
@@ -168,7 +168,7 @@ export default function FAQ() {
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-mint-400 px-6 py-3.5 font-bold text-base-950 transition hover:bg-mint-300"
+              className="btn-primary"
             >
               Create Account
               <ArrowRight size={18} />
@@ -176,7 +176,7 @@ export default function FAQ() {
 
             <Link
               to="/how-it-works"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 font-semibold transition hover:bg-white/10"
+              className="btn-secondary"
             >
               How It Works
             </Link>

@@ -106,20 +106,20 @@ function StepCard({ step }) {
   const Icon = step.icon
 
   return (
-    <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:-translate-y-1 hover:bg-white/[0.05]">
+    <div className="card p-6 transition hover:-translate-y-1">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-mint-400/10 text-mint-400">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-mint-500/10 text-mint-500">
           <Icon size={23} />
         </div>
 
-        <span className="text-sm font-extrabold text-white/20">
+        <span className="text-sm font-extrabold text-slate-500">
           {step.number}
         </span>
       </div>
 
-      <h3 className="mt-6 text-lg font-bold">{step.title}</h3>
+      <h3 className="mt-6 text-lg font-bold text-[#F1F5F9]">{step.title}</h3>
 
-      <p className="mt-3 text-sm leading-6 text-white/50">
+      <p className="mt-3 text-sm leading-6 text-slate-400">
         {step.description}
       </p>
     </div>
@@ -128,19 +128,19 @@ function StepCard({ step }) {
 
 export default function HowItWorks() {
   return (
-    <main className="min-h-screen bg-base-950 text-white">
+    <main className="min-h-screen text-[#F1F5F9]">
       {/* Hero */}
-      <section className="border-b border-white/5">
+      <section className="border-b border-white/10">
         <div className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-6 lg:py-28">
-          <p className="text-sm font-bold uppercase tracking-wider text-mint-400">
+          <p className="text-sm font-bold uppercase tracking-wider text-mint-500">
             How Taskly Works
           </p>
 
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-[#F1F5F9] sm:text-5xl lg:text-6xl">
             Simple steps from task discovery to completion
           </h1>
 
-          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-white/55 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-400 sm:text-lg">
             Taskly provides a straightforward workflow for both digital
             workers and employers. Discover tasks, complete work, review
             submissions, and manage everything from one platform.
@@ -152,15 +152,15 @@ export default function HowItWorks() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <div className="inline-flex rounded-full border border-mint-400/20 bg-mint-400/10 px-4 py-2 text-sm font-bold text-mint-400">
+            <div className="inline-flex rounded-full border border-mint-500/20 bg-mint-500/10 px-4 py-2 text-sm font-bold text-mint-500">
               For Digital Workers
             </div>
 
-            <h2 className="mt-5 text-3xl font-extrabold sm:text-4xl">
+            <h2 className="mt-5 text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
               Complete tasks and manage your work
             </h2>
 
-            <p className="mt-4 leading-7 text-white/50">
+            <p className="mt-4 leading-7 text-slate-400">
               Follow a simple workflow to discover available tasks, complete
               the requirements, submit your work, and track the result.
             </p>
@@ -175,18 +175,18 @@ export default function HowItWorks() {
       </section>
 
       {/* Employer Section */}
-      <section className="border-y border-white/5 bg-white/[0.015] py-20">
+      <section className="border-y border-white/10 bg-slate-900/40 py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <div className="inline-flex rounded-full border border-mint-400/20 bg-mint-400/10 px-4 py-2 text-sm font-bold text-mint-400">
+            <div className="inline-flex rounded-full border border-mint-500/20 bg-mint-500/10 px-4 py-2 text-sm font-bold text-mint-500">
               For Employers
             </div>
 
-            <h2 className="mt-5 text-3xl font-extrabold sm:text-4xl">
+            <h2 className="mt-5 text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
               Create tasks and manage submissions
             </h2>
 
-            <p className="mt-4 leading-7 text-white/50">
+            <p className="mt-4 leading-7 text-slate-400">
               Employers can create digital tasks, receive submissions, review
               completed work, and manage their campaigns through the platform.
             </p>
@@ -203,11 +203,11 @@ export default function HowItWorks() {
       {/* Workflow */}
       <section className="py-20">
         <div className="mx-auto max-w-4xl px-5 text-center sm:px-6">
-          <p className="text-sm font-bold uppercase tracking-wider text-mint-400">
+          <p className="text-sm font-bold uppercase tracking-wider text-mint-500">
             The Taskly Workflow
           </p>
 
-          <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
+          <h2 className="mt-3 text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
             One platform. Two sides. One simple workflow.
           </h2>
 
@@ -221,14 +221,14 @@ export default function HowItWorks() {
               'Approve',
             ].map((item, index, array) => (
               <React.Fragment key={item}>
-                <div className="rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 font-semibold">
+                <div className="rounded-full border border-white/10 bg-slate-800 px-5 py-3 font-semibold text-[#F1F5F9]">
                   {item}
                 </div>
 
                 {index < array.length - 1 && (
                   <ArrowRight
                     size={18}
-                    className="hidden text-mint-400 sm:block"
+                    className="hidden text-mint-500 sm:block"
                   />
                 )}
               </React.Fragment>
@@ -238,20 +238,20 @@ export default function HowItWorks() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-white/5 py-20">
+      <section className="border-t border-white/10 py-20">
         <div className="mx-auto max-w-4xl px-5 text-center">
-          <h2 className="text-3xl font-extrabold sm:text-4xl">
+          <h2 className="text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
             Ready to explore Taskly?
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-white/50">
+          <p className="mx-auto mt-4 max-w-2xl text-slate-400">
             Create an account and start exploring the Taskly platform.
           </p>
 
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-mint-400 px-6 py-3.5 font-bold text-base-950 transition hover:bg-mint-300"
+              className="btn-primary"
             >
               Get Started
               <ArrowRight size={18} />
@@ -259,7 +259,7 @@ export default function HowItWorks() {
 
             <Link
               to="/"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 font-semibold hover:bg-white/10"
+              className="btn-secondary"
             >
               Back to Home
             </Link>

@@ -37,19 +37,19 @@ const values = [
 
 export default function About() {
   return (
-    <main className="min-h-screen bg-base-950 text-white">
+    <main className="min-h-screen text-[#F1F5F9]">
       {/* Hero */}
-      <section className="border-b border-white/5">
+      <section className="border-b border-white/10">
         <div className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-6 lg:py-28">
-          <p className="text-sm font-bold uppercase tracking-wider text-mint-400">
+          <p className="text-sm font-bold uppercase tracking-wider text-mint-500">
             About Taskly
           </p>
 
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-[#F1F5F9] sm:text-5xl lg:text-6xl">
             A simpler way to connect with digital micro-tasks
           </h1>
 
-          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-white/55 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-400 sm:text-lg">
             Taskly is a digital micro-task marketplace designed to connect
             people looking for flexible online work with employers who need
             digital tasks completed.
@@ -61,15 +61,15 @@ export default function About() {
       <section className="py-20">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-mint-400">
+            <p className="text-sm font-bold uppercase tracking-wider text-mint-500">
               Our Platform
             </p>
 
-            <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
               What is Taskly?
             </h2>
 
-            <div className="mt-6 space-y-5 text-white/55 leading-8">
+            <div className="mt-6 space-y-5 text-slate-400 leading-8">
               <p>
                 Taskly is an online marketplace focused on digital micro-tasks
                 and short-duration online work.
@@ -89,8 +89,8 @@ export default function About() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
-            <h3 className="text-xl font-bold">
+          <div className="card p-8">
+            <h3 className="text-xl font-bold text-[#F1F5F9]">
               Taskly at a glance
             </h3>
 
@@ -103,10 +103,10 @@ export default function About() {
               ].map(([label, value]) => (
                 <div
                   key={label}
-                  className="border-b border-white/5 pb-4 last:border-0 last:pb-0"
+                  className="border-b border-white/10 pb-4 last:border-0 last:pb-0"
                 >
-                  <p className="text-sm text-white/40">{label}</p>
-                  <p className="mt-1 font-semibold text-white/80">
+                  <p className="text-sm text-slate-400">{label}</p>
+                  <p className="mt-1 font-semibold text-[#F1F5F9]">
                     {value}
                   </p>
                 </div>
@@ -117,14 +117,14 @@ export default function About() {
       </section>
 
       {/* Values */}
-      <section className="border-y border-white/5 bg-white/[0.015] py-20">
+      <section className="border-y border-white/10 bg-slate-900/40 py-20">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-wider text-mint-400">
+            <p className="text-sm font-bold uppercase tracking-wider text-mint-500">
               What We Value
             </p>
 
-            <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
               Built around simple principles
             </h2>
           </div>
@@ -136,17 +136,17 @@ export default function About() {
               return (
                 <div
                   key={item.title}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+                  className="card p-6"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-mint-400/10 text-mint-400">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-mint-500/10 text-mint-500">
                     <Icon size={22} />
                   </div>
 
-                  <h3 className="mt-5 text-lg font-bold">
+                  <h3 className="mt-5 text-lg font-bold text-[#F1F5F9]">
                     {item.title}
                   </h3>
 
-                  <p className="mt-3 text-sm leading-6 text-white/50">
+                  <p className="mt-3 text-sm leading-6 text-slate-400">
                     {item.description}
                   </p>
                 </div>
@@ -159,11 +159,11 @@ export default function About() {
       {/* CTA */}
       <section className="py-20">
         <div className="mx-auto max-w-4xl px-5 text-center">
-          <h2 className="text-3xl font-extrabold sm:text-4xl">
+          <h2 className="text-3xl font-extrabold text-[#F1F5F9] sm:text-4xl">
             Explore Taskly
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-white/50">
+          <p className="mx-auto mt-4 max-w-2xl text-slate-400">
             Create an account to discover the platform and explore available
             opportunities.
           </p>
@@ -171,7 +171,7 @@ export default function About() {
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-mint-400 px-6 py-3.5 font-bold text-base-950 transition hover:bg-mint-300"
+              className="btn-primary"
             >
               Get Started
               <ArrowRight size={18} />
@@ -179,7 +179,7 @@ export default function About() {
 
             <Link
               to="/"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 font-semibold hover:bg-white/10"
+              className="btn-secondary"
             >
               Back to Home
             </Link>

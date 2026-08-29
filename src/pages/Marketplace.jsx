@@ -64,13 +64,13 @@ export default function Marketplace() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Task marketplace</h1>
-        <p className="text-sm text-slate-500 mt-1">Find work that matches your skills and start earning today.</p>
+        <h1 className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">Task marketplace</h1>
+        <p className="text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">Find work that matches your skills and start earning today.</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             className="input pl-10"
             placeholder="Search tasks…"
@@ -83,10 +83,10 @@ export default function Marketplace() {
             <button
               key={c}
               onClick={() => setCategory(c)}
-              className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium border transition ${
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs sm:text-sm font-semibold border transition-all ${
                 category === c
-                  ? 'bg-mint-500 text-base-950 border-mint-500'
-                  : 'border-base-600 text-slate-300 hover:border-base-500'
+                  ? 'bg-emerald-600 dark:bg-mint-500 text-white dark:text-slate-900 border-emerald-600 dark:border-mint-500 shadow-sm'
+                  : 'border-[#CBD5E1] dark:border-white/10 bg-white dark:bg-slate-800 text-[#1E293B] dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/20 hover:bg-[#E2E8F0] dark:hover:text-white'
               }`}
             >
               {c}
@@ -96,7 +96,7 @@ export default function Marketplace() {
       </div>
 
       {loading ? (
-        <div className="text-sm text-slate-500 py-16 text-center">Loading tasks…</div>
+        <div className="text-sm text-slate-500 dark:text-slate-400 py-16 text-center">Loading tasks…</div>
       ) : filtered.length === 0 ? (
         <EmptyState title="No tasks found" subtitle="Try a different search term or category." />
       ) : (

@@ -132,52 +132,52 @@ export default function AdminDashboard() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage deposits, withdrawals, users, and platform earnings.</p>
+        <h1 className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">Admin Dashboard</h1>
+        <p className="text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">Manage deposits, withdrawals, users, and platform earnings.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card p-5">
+        <div className="card p-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-mint-500/10 text-mint-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#DCFCE7] dark:bg-mint-500/10 text-[#166534] dark:text-mint-500 font-bold">
               <DollarSign size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">${totalCommission.toFixed(2)}</p>
-              <p className="text-xs text-slate-500">Total commission</p>
+              <p className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">${totalCommission.toFixed(2)}</p>
+              <p className="text-xs text-[#64748B] dark:text-slate-400">Total commission</p>
             </div>
           </div>
         </div>
-        <div className="card p-5">
+        <div className="card p-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-signal-amber/10 text-signal-amber">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FEF3C7] dark:bg-signal-amber/10 text-[#B45309] dark:text-signal-amber font-bold">
               <ArrowDownToLine size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{pendingDeposits.length}</p>
-              <p className="text-xs text-slate-500">Pending deposits</p>
+              <p className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">{pendingDeposits.length}</p>
+              <p className="text-xs text-[#64748B] dark:text-slate-400">Pending deposits</p>
             </div>
           </div>
         </div>
-        <div className="card p-5">
+        <div className="card p-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-signal-rose/10 text-signal-rose">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#FFE4E6] dark:bg-signal-rose/10 text-[#E11D48] dark:text-signal-rose font-bold">
               <ArrowUpFromLine size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{pendingWithdrawals.length}</p>
-              <p className="text-xs text-slate-500">Pending withdrawals</p>
+              <p className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">{pendingWithdrawals.length}</p>
+              <p className="text-xs text-[#64748B] dark:text-slate-400">Pending withdrawals</p>
             </div>
           </div>
         </div>
-        <div className="card p-5">
+        <div className="card p-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-signal-indigo/10 text-signal-indigo">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E0E7FF] dark:bg-signal-indigo/10 text-[#4338CA] dark:text-signal-indigo font-bold">
               <Users size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{users.length}</p>
-              <p className="text-xs text-slate-500">Total users</p>
+              <p className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">{users.length}</p>
+              <p className="text-xs text-[#64748B] dark:text-slate-400">Total users</p>
             </div>
           </div>
         </div>
@@ -190,8 +190,8 @@ export default function AdminDashboard() {
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium border transition ${
               tab === t.id
-                ? 'bg-mint-500 text-base-950 border-mint-500'
-                : 'border-base-600 text-slate-300 hover:border-base-500'
+                ? 'bg-emerald-600 dark:bg-mint-500 text-white dark:text-slate-900 border-emerald-600 dark:border-mint-500 font-semibold'
+                : 'border-[#CBD5E1] dark:border-white/10 bg-white dark:bg-slate-800 text-[#1E293B] dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/20 hover:bg-[#E2E8F0] dark:hover:text-white'
             }`}
           >
             <t.icon size={16} />
@@ -203,27 +203,27 @@ export default function AdminDashboard() {
       <ErrorBanner message={error} />
 
       {loading ? (
-        <div className="text-sm text-slate-500 py-16 text-center">Loading…</div>
+        <div className="text-sm text-[#64748B] dark:text-slate-400 py-16 text-center">Loading…</div>
       ) : tab === 'deposits' ? (
         <div className="space-y-3">
           {deposits.length === 0 ? (
             <EmptyState icon={Banknote} title="No deposit requests" subtitle="Employer deposit requests will appear here." />
           ) : (
             deposits.map((d) => (
-              <div key={d.id} className="card p-5">
+              <div key={d.id} className="card p-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="font-semibold text-white">${money(d.amount)} · {d.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
-                    <p className="text-xs text-slate-500">From: {d.sender_mobile} · TrxID: {d.trx_id}</p>
-                    <p className="text-xs text-slate-500">{new Date(d.created_at).toLocaleString()}</p>
+                    <p className="font-bold text-[#1E293B] dark:text-[#F1F5F9]">${money(d.amount)} · {d.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400">From: {d.sender_mobile} · TrxID: {d.trx_id}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400">{new Date(d.created_at).toLocaleString()}</p>
                     {d.rejection_reason && (
-                      <p className="text-xs text-signal-rose mt-1">Rejected: {d.rejection_reason}</p>
+                      <p className="text-xs text-rose-600 mt-1 font-medium">Rejected: {d.rejection_reason}</p>
                     )}
                   </div>
                   <StatusBadge status={d.status} />
                 </div>
                 {d.status === 'pending' && (
-                  <div className="mt-4 pt-4 border-t border-base-700">
+                  <div className="mt-4 pt-4 border-t border-[#CBD5E1] dark:border-white/10">
                     {rejectingId === d.id ? (
                       <div className="space-y-2">
                         <input
@@ -263,18 +263,18 @@ export default function AdminDashboard() {
             <EmptyState icon={ArrowUpFromLine} title="No withdrawal requests" subtitle="Worker withdrawal requests will appear here." />
           ) : (
             withdrawals.map((w) => (
-              <div key={w.id} className="card p-5">
+              <div key={w.id} className="card p-5 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="font-semibold text-white">${money(w.amount)} · {w.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
-                    <p className="text-xs text-slate-500">To: {w.account_details}</p>
-                    <p className="text-xs text-slate-500">Fee: ${money(w.fee_amount)} · Worker receives: ${money(w.net_amount ?? w.amount)}</p>
-                    <p className="text-xs text-slate-500">{new Date(w.created_at).toLocaleString()}</p>
+                    <p className="font-bold text-[#1E293B] dark:text-[#F1F5F9]">${money(w.amount)} · {w.method === 'bkash' ? 'bKash' : 'Nagad'}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400">To: {w.account_details}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400">Fee: ${money(w.fee_amount)} · Worker receives: ${money(w.net_amount ?? w.amount)}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400">{new Date(w.created_at).toLocaleString()}</p>
                   </div>
                   <StatusBadge status={w.status} />
                 </div>
                 {w.status === 'pending' && (
-                  <div className="mt-4 pt-4 border-t border-base-700">
+                  <div className="mt-4 pt-4 border-t border-[#CBD5E1] dark:border-white/10">
                     {rejectingId === w.id ? (
                       <div className="space-y-2">
                         <input
@@ -311,16 +311,16 @@ export default function AdminDashboard() {
       ) : tab === 'users' ? (
         <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3">Employers ({employers.length})</h3>
-            <div className="card divide-y divide-base-700">
+            <h3 className="text-sm font-bold text-[#1E293B] dark:text-[#F1F5F9] mb-3">Employers ({employers.length})</h3>
+            <div className="card divide-y divide-[#E2E8F0] dark:divide-white/10 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
               {employers.length === 0 ? (
-                <p className="p-5 text-sm text-slate-500">No employers registered.</p>
+                <p className="p-5 text-sm text-[#64748B] dark:text-slate-400">No employers registered.</p>
               ) : (
                 employers.map((u) => (
                   <div key={u.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
-                      <p className="text-white font-medium">{u.full_name}</p>
-                      <p className="text-xs text-slate-500">Balance: ${money(u.deposited)} · Reserved: ${money(u.pending)} · Spent: ${money(u.spent)}</p>
+                      <p className="text-[#1E293B] dark:text-[#F1F5F9] font-semibold">{u.full_name}</p>
+                      <p className="text-xs text-[#64748B] dark:text-slate-400">Balance: ${money(u.deposited)} · Reserved: ${money(u.pending)} · Spent: ${money(u.spent)}</p>
                     </div>
                     <StatusBadge status={u.role} />
                   </div>
@@ -329,16 +329,16 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white mb-3">Workers ({workers.length})</h3>
-            <div className="card divide-y divide-base-700">
+            <h3 className="text-sm font-bold text-[#1E293B] dark:text-[#F1F5F9] mb-3">Workers ({workers.length})</h3>
+            <div className="card divide-y divide-[#E2E8F0] dark:divide-white/10 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
               {workers.length === 0 ? (
-                <p className="p-5 text-sm text-slate-500">No workers registered.</p>
+                <p className="p-5 text-sm text-[#64748B] dark:text-slate-400">No workers registered.</p>
               ) : (
                 workers.map((u) => (
                   <div key={u.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
-                      <p className="text-white font-medium">{u.full_name}</p>
-                      <p className="text-xs text-slate-500">Earned: ${money(u.earnings)} · Pending: ${money(u.pending)} · Withdrawn: ${money(u.spent)}</p>
+                      <p className="text-[#1E293B] dark:text-[#F1F5F9] font-semibold">{u.full_name}</p>
+                      <p className="text-xs text-[#64748B] dark:text-slate-400">Earned: ${money(u.earnings)} · Pending: ${money(u.pending)} · Withdrawn: ${money(u.spent)}</p>
                     </div>
                     <StatusBadge status={u.role} />
                   </div>
@@ -353,35 +353,35 @@ export default function AdminDashboard() {
             <EmptyState icon={TrendingUp} title="No earnings yet" subtitle="Platform commission from approved tasks and withdrawal fees will appear here." />
           ) : (
             <>
-              <div className="card p-5 flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-mint-500/10 text-mint-400">
+              <div className="card p-5 flex items-center gap-4 bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#DCFCE7] dark:bg-mint-500/10 text-[#166534] dark:text-mint-500 font-bold">
                   <Wallet size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">${totalCommission.toFixed(2)}</p>
-                  <p className="text-sm text-slate-500">Total platform commission ({totalEarningEntries} entries)</p>
+                  <p className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">${totalCommission.toFixed(2)}</p>
+                  <p className="text-sm text-[#64748B] dark:text-slate-400">Total platform commission ({totalEarningEntries} entries)</p>
                 </div>
               </div>
               {earnings.map((e) => (
-                <div key={e.id} className="card p-5 flex items-center justify-between">
+                <div key={e.id} className="card p-5 flex items-center justify-between bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
                   <div>
-                    <p className="text-sm font-medium text-white">Task commission · Reward: ${money(e.reward_amount)}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm font-semibold text-[#1E293B] dark:text-[#F1F5F9]">Task commission · Reward: ${money(e.reward_amount)}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
                       Commission ({numericValue(e.commission_rate).toFixed(0)}%): ${money(e.commission_amount)} · {new Date(e.created_at).toLocaleString()}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-mint-400">+${money(e.commission_amount)}</span>
+                  <span className="text-sm font-bold text-emerald-600 dark:text-mint-500">+${money(e.commission_amount)}</span>
                 </div>
               ))}
               {withdrawalFees.map((e) => (
-                <div key={e.id} className="card p-5 flex items-center justify-between">
+                <div key={e.id} className="card p-5 flex items-center justify-between bg-white dark:bg-[#1E293B] border border-[#CBD5E1] dark:border-white/10 rounded-xl">
                   <div>
-                    <p className="text-sm font-medium text-white">Withdrawal fee · Requested: ${money(e.withdrawal_amount)}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm font-semibold text-[#1E293B] dark:text-[#F1F5F9]">Withdrawal fee · Requested: ${money(e.withdrawal_amount)}</p>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
                       Fee ({numericValue(e.fee_rate).toFixed(0)}%): ${money(e.fee_amount)} · {new Date(e.created_at).toLocaleString()}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-mint-400">+${money(e.fee_amount)}</span>
+                  <span className="text-sm font-bold text-emerald-600 dark:text-mint-500">+${money(e.fee_amount)}</span>
                 </div>
               ))}
             </>
