@@ -27,12 +27,12 @@ const ProtectedRoute = ({
 
   // 2. Redirect to login if not authenticated
   if (!isAuth) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 3. If a specific role is required, check it
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
-    // If a worker tries to access employer pages, send them home
+  // 3. If a specific role is required, strictly verify
+  if (allowedRoles && (!userRole || !allowedRoles.includes(userRole))) {
+    // If unauthorized role, redirect to role-based dashboard
     return <Navigate to="/dashboard" replace />;
   }
 

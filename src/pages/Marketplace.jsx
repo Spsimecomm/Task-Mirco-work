@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ArrowUpDown, Filter, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TaskCard from '../components/TaskCard'
 import { EmptyState } from '../components/Shared'
@@ -11,6 +11,7 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
+  const [sortBy, setSortBy] = useState('newest')
 
   const loadTasks = useCallback(async () => {
     const { data } = await supabase
@@ -50,7 +51,7 @@ export default function Marketplace() {
   }, [loadTasks])
 
   const filtered = useMemo(() => {
-    return tasks.filter((t) => {
+    let result = tasks.filter((t) => {
       const matchesCategory = category === 'All' || t.category === category
       const matchesQuery =
         !query ||
@@ -59,48 +60,107 @@ export default function Marketplace() {
       const hasSlots = t.slots_filled < t.slots_total
       return matchesCategory && matchesQuery && hasSlots
     })
-  }, [tasks, category, query])
+
+    if (sortBy === 'reward_high') {
+      result.sort((a, b) => Number(b.reward) - Number(a.reward))
+    } else if (sortBy === 'reward_low') {
+      result.sort((a, b) => Number(a.reward) - Number(b.reward))
+    } else if (sortBy === 'spots') {
+      result.sort((a, b) => (b.slots_total - b.slots_filled) - (a.slots_total - a.slots_filled))
+    } else {
+      // Newest
+      result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    }
+
+    return result
+  }, [tasks, category, query, sortBy])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#1E293B] dark:text-[#F1F5F9]">Task marketplace</h1>
-        <p className="text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">Find work that matches your skills and start earning today.</p>
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#1E293B] dark:text-[#F1F5F9] tracking-tight">
+            Task Marketplace
+          </h1>
+          <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">
+            Browse available micro-tasks and earn instantly upon approval.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-brand-primary border border-emerald-500/20">
+            {filtered.length} Tasks Available
+          </span>
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* Filter and Search Bar Row */}
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
+          <Search
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+          />
           <input
-            className="input pl-10"
-            placeholder="Search tasks…"
+            className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#111827] pl-10 pr-4 py-2.5 text-xs sm:text-sm text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            placeholder="Search tasks by keyword, employer or title…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
-          {CATEGORIES.map((c) => (
+
+        {/* Sort dropdown */}
+        <div className="flex items-center gap-2 self-end md:self-auto">
+          <label className="text-xs text-[#64748B] dark:text-slate-400 font-medium hidden sm:inline">
+            Sort by:
+          </label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#111827] px-3 py-2.5 text-xs font-semibold text-[#1E293B] dark:text-slate-200 outline-none cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition"
+          >
+            <option value="newest">Newest First</option>
+            <option value="reward_high">Highest Reward</option>
+            <option value="reward_low">Lowest Reward</option>
+            <option value="spots">Most Spots Left</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Category Pills Bar */}
+      <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+        {CATEGORIES.map((c) => {
+          const isActive = category === c
+          return (
             <button
               key={c}
               onClick={() => setCategory(c)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs sm:text-sm font-semibold border transition-all ${
-                category === c
-                  ? 'bg-emerald-600 dark:bg-mint-500 text-white dark:text-slate-900 border-emerald-600 dark:border-mint-500 shadow-sm'
-                  : 'border-[#CBD5E1] dark:border-white/10 bg-white dark:bg-slate-800 text-[#1E293B] dark:text-slate-300 hover:border-slate-400 dark:hover:border-white/20 hover:bg-[#E2E8F0] dark:hover:text-white'
+              className={`whitespace-nowrap rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold border transition-all ${
+                isActive
+                  ? 'bg-brand-primary text-white border-brand-primary shadow-sm shadow-brand-primary/20'
+                  : 'border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#111827] text-[#64748B] dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 hover:text-[#1E293B] dark:hover:text-white'
               }`}
             >
               {c}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
+      {/* Task Cards Grid */}
       {loading ? (
-        <div className="text-sm text-slate-500 dark:text-slate-400 py-16 text-center">Loading tasks…</div>
+        <div className="text-sm text-slate-500 dark:text-slate-400 py-16 text-center">
+          Loading tasks…
+        </div>
       ) : filtered.length === 0 ? (
-        <EmptyState title="No tasks found" subtitle="Try a different search term or category." />
+        <EmptyState
+          title="No tasks found"
+          subtitle="Try selecting a different category or clearing your search term."
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((t) => (
             <TaskCard key={t.id} task={t} />
           ))}
@@ -109,3 +169,4 @@ export default function Marketplace() {
     </div>
   )
 }
+

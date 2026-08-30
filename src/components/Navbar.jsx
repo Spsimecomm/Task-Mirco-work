@@ -39,17 +39,13 @@ export default function Navbar() {
     { to: '/faq', label: 'FAQ' },
   ]
 
-  // কারেন্ট পাথ বা রোল অনুযায়ী সঠিক লিঙ্ক সিলেক্ট করা
-  const currentPath = location.pathname;
-  let links = workerLinks;
-  
-  if (role === 'admin' || currentPath.startsWith('/admin')) {
-    links = adminLinks;
-  } else if (role === 'employer' || currentPath.startsWith('/employer') || currentPath.startsWith('/create-task') || currentPath.startsWith('/review-submissions') || currentPath.startsWith('/deposit')) {
-    links = employerLinks;
-  } else if (role === 'worker' || currentPath.startsWith('/worker') || currentPath.startsWith('/marketplace') || currentPath.startsWith('/task') || currentPath.startsWith('/my-submissions') || currentPath.startsWith('/withdraw')) {
-    links = workerLinks;
-  }
+  // Select links strictly based on user role
+  const links =
+    role === 'admin'
+      ? adminLinks
+      : role === 'employer'
+      ? employerLinks
+      : workerLinks
 
   const handleSignOut = async () => {
     await signOut()
@@ -57,7 +53,7 @@ export default function Navbar() {
   }
 
   // যদি ইউজার লগইন না করা থাকে এবং হোমপেজে থাকে, হোমপেজের নিজস্ব হিরো সেকশন থাকবে
-  if (!user && currentPath === '/') {
+  if (!user && location.pathname === '/') {
     return null
   }
 

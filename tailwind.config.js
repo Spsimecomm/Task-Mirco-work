@@ -5,10 +5,30 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Manrope"', 'sans-serif'],
-        body: ['"Inter"', 'sans-serif'],
+        poppins: ['"Poppins"', 'sans-serif'],
+        display: ['"Poppins"', '"Manrope"', 'sans-serif'],
+        body: ['"Inter"', '"Poppins"', 'sans-serif'],
       },
       colors: {
+        // Design System Colors from Mockup
+        brand: {
+          primary: '#22C55E',   // Green
+          secondary: '#0366F1', // Blue
+          accent: '#F59E0B',    // Amber
+          danger: '#EF4444',    // Rose
+        },
+        dark: {
+          '01': '#0B1020',      // Main Background Deep Blue-Black
+          '02': '#111827',      // Card Background (Slate 900)
+          '03': '#1F2937',      // Inner Surface / Highlight
+          border: '#2A3348',    // Structural Border
+        },
+        light: {
+          bg: '#F8FAFC',
+          card: '#FFFFFF',
+          border: '#CBD5E1',
+          sub: '#F1F5F9',
+        },
         base: {
           950: 'var(--bg-main)',
           900: 'var(--bg-sub)',
@@ -26,7 +46,7 @@ export default {
           700: '#15803D',
         },
         signal: {
-          indigo: '#6366F1',
+          indigo: '#0366F1',
           amber: '#F59E0B',
           rose: '#EF4444',
         },
@@ -34,6 +54,7 @@ export default {
       boxShadow: {
         card: 'var(--card-shadow)',
         subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+        glow: '0 0 20px -5px rgba(34, 197, 94, 0.25)',
       },
       borderRadius: {
         xl2: '0.75rem',

@@ -2,7 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
-import Navbar from './components/Navbar'
+import AppLayout from './components/AppLayout'
 
 // Pages
 import Home from './pages/Home'
@@ -37,8 +37,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <AppLayout>
       <Routes>
         {/* Public Informational Pages */}
         <Route path="/" element={<Home />} />
@@ -76,14 +75,14 @@ export default function App() {
           }
         />
 
-        {/* Worker & Marketplace Routes */}
+        {/* Worker Routes */}
         <Route
           path="/worker"
           element={
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['worker', 'admin']}
+              allowedRoles={['worker']}
               isLoading={loading}
             >
               <WorkerDashboard />
@@ -93,7 +92,12 @@ export default function App() {
         <Route
           path="/marketplace"
           element={
-            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker']}
+              isLoading={loading}
+            >
               <Marketplace />
             </ProtectedRoute>
           }
@@ -101,7 +105,12 @@ export default function App() {
         <Route
           path="/task/:id"
           element={
-            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker']}
+              isLoading={loading}
+            >
               <TaskDetail />
             </ProtectedRoute>
           }
@@ -109,7 +118,12 @@ export default function App() {
         <Route
           path="/tasks/:id"
           element={
-            <ProtectedRoute isAuth={!!session} userRole={role} isLoading={loading}>
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker']}
+              isLoading={loading}
+            >
               <TaskDetail />
             </ProtectedRoute>
           }
@@ -120,7 +134,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['worker', 'admin']}
+              allowedRoles={['worker']}
               isLoading={loading}
             >
               <MySubmissions />
@@ -133,7 +147,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['worker', 'admin']}
+              allowedRoles={['worker']}
               isLoading={loading}
             >
               <Withdraw />
@@ -148,7 +162,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['employer', 'admin']}
+              allowedRoles={['employer']}
               isLoading={loading}
             >
               <EmployerDashboard />
@@ -161,7 +175,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['employer', 'admin']}
+              allowedRoles={['employer']}
               isLoading={loading}
             >
               <CreateTask />
@@ -174,7 +188,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['employer', 'admin']}
+              allowedRoles={['employer']}
               isLoading={loading}
             >
               <ReviewSubmissions />
@@ -187,7 +201,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['employer', 'admin']}
+              allowedRoles={['employer']}
               isLoading={loading}
             >
               <Deposit />
@@ -213,6 +227,6 @@ export default function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </div>
+    </AppLayout>
   )
 }

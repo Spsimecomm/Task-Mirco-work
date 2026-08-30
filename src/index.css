@@ -4,32 +4,32 @@
 
 @layer base {
   :root {
-    --bg-main: #0F172A;
-    --bg-sub: #141E33;
-    --bg-card: #1E293B;
-    --bg-inner: #0F172A;
-    --border-subtle: rgba(255, 255, 255, 0.1);
-    --border-divider: rgba(255, 255, 255, 0.1);
+    --bg-main: #0B1020;
+    --bg-sub: #0E1428;
+    --bg-card: #111827;
+    --bg-inner: #1F2937;
+    --border-subtle: #2A3348;
+    --border-divider: #2A3348;
     --text-heading: #F1F5F9;
     --text-body: #94A3B8;
     --text-muted: #64748B;
     --accent-primary: #22C55E;
     --accent-primary-hover: #16A34A;
-    --accent-primary-text: #0F172A;
-    --input-bg: #0F172A;
-    --input-border: rgba(255, 255, 255, 0.1);
+    --accent-primary-text: #0B1020;
+    --input-bg: #0B1020;
+    --input-border: #2A3348;
     --input-placeholder: #64748B;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.15);
-    --tab-inactive-bg: #1E293B;
-    --tab-inactive-border: rgba(255, 255, 255, 0.1);
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+    --tab-inactive-bg: #111827;
+    --tab-inactive-border: #2A3348;
     --tab-inactive-text: #94A3B8;
-    --sub-box-bg: #0F172A;
-    --sub-box-border: rgba(255, 255, 255, 0.1);
+    --sub-box-bg: #0B1020;
+    --sub-box-border: #2A3348;
   }
 
   html.light, [data-theme="light"] {
-    --bg-main: #F1F5F9;
-    --bg-sub: #E2E8F0;
+    --bg-main: #F8FAFC;
+    --bg-sub: #F1F5F9;
     --bg-card: #FFFFFF;
     --bg-inner: #F1F5F9;
     --border-subtle: #CBD5E1;
@@ -43,7 +43,7 @@
     --input-bg: #FFFFFF;
     --input-border: #CBD5E1;
     --input-placeholder: #94A3B8;
-    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
     --tab-inactive-bg: #E2E8F0;
     --tab-inactive-border: #CBD5E1;
     --tab-inactive-text: #64748B;
@@ -57,19 +57,17 @@
   }
   html.light {
     color-scheme: light;
-    background-color: #F1F5F9;
+    background-color: #F8FAFC;
   }
   body {
     background-color: var(--bg-main);
     color: var(--text-body);
     @apply font-body antialiased;
-    background-image: radial-gradient(circle at 15% 0%, rgba(34, 197, 94, 0.04), transparent 30%),
-      radial-gradient(circle at 85% 15%, rgba(129, 140, 248, 0.04), transparent 25%);
     background-attachment: fixed;
     transition: background-color 0.15s ease, color 0.15s ease;
   }
   html.light body {
-    background-color: #F1F5F9;
+    background-color: #F8FAFC;
     background-image: none;
     color: #64748B;
   }

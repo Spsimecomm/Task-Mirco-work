@@ -1,18 +1,43 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Tag, Calendar } from 'lucide-react'
+import {
+  Users,
+  Calendar,
+  Share2,
+  UserPlus,
+  PlayCircle,
+  FileSpreadsheet,
+  Tag
+} from 'lucide-react'
 
-const categoryColors = {
-  'Social Media': 'bg-[#EEF2FF] text-[#3730A3] border-[#C7D2FE] dark:bg-[#1E1B4B] dark:text-[#818CF8] dark:border-[#3730A3]',
-  'Sign Up': 'bg-[#DCFCE7] text-[#166534] border-[#BBF7D0] dark:bg-[#064E3B] dark:text-[#34D399] dark:border-[#047857]',
-  'Video Watching': 'bg-[#FFE4E6] text-[#9F1239] border-[#FECDD3] dark:bg-[#4C0519] dark:text-[#FB7185] dark:border-[#9F1239]',
-  'Data Entry': 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] dark:bg-[#451A03] dark:text-[#FBBF24] dark:border-[#78350F]',
+const categoryConfig = {
+  'Social Media': {
+    icon: Share2,
+    badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  },
+  'Sign Up': {
+    icon: UserPlus,
+    badge: 'bg-emerald-500/10 text-emerald-600 dark:text-brand-primary border-emerald-500/20',
+  },
+  'Video Watching': {
+    icon: PlayCircle,
+    badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+  },
+  'Data Entry': {
+    icon: FileSpreadsheet,
+    badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  },
 }
 
 export default function TaskCard({ task }) {
   const slotsLeft = task.slots_total - task.slots_filled
+  const config = categoryConfig[task.category] || {
+    icon: Tag,
+    badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  }
+  const CategoryIcon = config.icon
 
-  // Strip superfluous line-level emojis from description preview for clean typography
+  // Clean description string
   const cleanDescription = (task.description || '')
     .replace(/^[🔹🔸👉🎯📌🚀⭐✨➡️⚡📝💡✔️•\-*]+\s*/gm, '')
     .trim()
@@ -20,43 +45,54 @@ export default function TaskCard({ task }) {
   return (
     <Link
       to={`/task/${task.id}`}
-      className="card card-hover p-5 sm:p-6 flex flex-col justify-between gap-4 rounded-xl border border-[#CBD5E1] dark:border-white/10 hover:border-mint-500 dark:hover:border-mint-500/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group bg-white dark:bg-[#1E293B]"
+      className="card group flex flex-col justify-between rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-5 sm:p-6 shadow-sm hover:border-brand-primary dark:hover:border-brand-primary/60 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
     >
-      <div className="space-y-3">
-        {/* Category Badge & Prominent Green Bold Reward */}
+      <div className="space-y-3.5">
+        {/* Top: Category Badge & Reward */}
         <div className="flex items-center justify-between gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border ${categoryColors[task.category] || 'bg-[#E2E8F0] text-[#334155] border-[#CBD5E1] dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
-            <Tag size={11} className="shrink-0" />
-            {task.category}
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border ${config.badge}`}
+          >
+            <CategoryIcon size={13} className="shrink-0" />
+            <span>{task.category}</span>
           </span>
-          <span className="text-xl sm:text-2xl font-display font-extrabold text-emerald-600 dark:text-mint-500 whitespace-nowrap tracking-tight leading-none">
+          <span className="text-xl sm:text-2xl font-display font-extrabold text-emerald-600 dark:text-brand-primary whitespace-nowrap tracking-tight leading-none">
             ${Number(task.reward).toFixed(2)}
           </span>
         </div>
 
-        {/* Task Title: Large and Bold */}
-        <h3 className="text-base sm:text-lg font-bold text-[#1E293B] dark:text-[#F1F5F9] leading-snug group-hover:text-emerald-600 dark:group-hover:text-mint-500 transition line-clamp-2">
+        {/* Task Title */}
+        <h3 className="text-base font-bold text-[#1E293B] dark:text-[#F1F5F9] leading-snug group-hover:text-emerald-600 dark:group-hover:text-brand-primary transition-colors line-clamp-2">
           {task.title}
         </h3>
 
-        {/* Task Description: Normal Font Weight */}
-        <p className="text-sm font-normal text-[#64748B] dark:text-slate-400 line-clamp-2 leading-relaxed">
+        {/* Task Description */}
+        <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 line-clamp-2 leading-relaxed">
           {cleanDescription}
         </p>
       </div>
 
-      {/* Meta info: Small and Muted */}
-      <div className="pt-3 border-t border-[#E2E8F0] dark:border-white/5 flex items-center justify-between text-xs font-normal text-[#64748B] dark:text-slate-400">
+      {/* Meta Footer */}
+      <div className="mt-4 pt-3.5 border-t border-[#E2E8F0] dark:border-[#2A3348]/60 flex items-center justify-between text-xs font-normal text-[#64748B] dark:text-slate-400">
         <span className="flex items-center gap-1.5">
-          <Users size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-          <span>{slotsLeft > 0 ? `${slotsLeft} spots left` : 'Full'}</span>
+          <Users size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+          <span className={slotsLeft <= 5 ? 'text-amber-600 dark:text-amber-400 font-semibold' : ''}>
+            {slotsLeft > 0 ? `${slotsLeft} spots left` : 'Full'}
+          </span>
         </span>
-        <span className="flex items-center gap-1">
-          <Calendar size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-          <span>{new Date(task.created_at).toLocaleDateString()}</span>
+        <span className="flex items-center gap-1.5">
+          <Calendar size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
+          <span>
+            {new Date(task.created_at).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </span>
         </span>
       </div>
     </Link>
   )
 }
+
 

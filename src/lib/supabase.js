@@ -479,10 +479,11 @@ function createMockClient() {
       }
 
       if (funcName === 'request_withdrawal') {
-        const { p_amount, p_method, p_account } = params
+        const { p_amount, p_method, p_account, p_account_details } = params
         const reqAmt = Number(p_amount)
         const fee = Math.round(reqAmt * 0.02 * 100) / 100
         const netAmount = Math.max(0, reqAmt - fee)
+        const accountVal = p_account_details || p_account || ''
 
         if (currentProfile) {
           currentProfile.earnings = Math.max(0, (Number(currentProfile.earnings) || 0) - reqAmt)
@@ -494,7 +495,8 @@ function createMockClient() {
           worker_name: currentProfile?.full_name || 'Worker',
           amount: reqAmt,
           method: p_method,
-          account: p_account,
+          account: accountVal,
+          account_details: accountVal,
           fee,
           net_amount: netAmount,
           status: 'pending',
@@ -513,6 +515,9 @@ function createMockClient() {
       }
 
       if (funcName === 'submit_task_proof') {
+        if (currentProfile && currentProfile.role !== 'worker') {
+          return { data: null, error: { message: 'Unauthorized: Only registered workers can submit task proofs.' } }
+        }
         const { p_task_id, p_proof_text, p_proof_url } = params
         const task = db.tasks.find((t) => t.id === p_task_id)
         if (task) {
