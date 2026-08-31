@@ -92,12 +92,20 @@ export function AuthProvider({ children }) {
     }
   }, [session?.user?.id, loadProfile])
 
-  const signUp = async ({ email, password, fullName, role }) => {
+  const signUp = async ({ email, password, fullName, role, referralCode }) => {
     if (!supabase) throw new Error('The sign-in service is not configured yet.')
+    const trimmedRef = referralCode ? String(referralCode).trim().toUpperCase() : undefined
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, role } },
+      options: {
+        data: {
+          full_name: fullName,
+          role,
+          referral_code: trimmedRef || undefined,
+          ref: trimmedRef || undefined,
+        },
+      },
     })
     if (error) throw error
     return data

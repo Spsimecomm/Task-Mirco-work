@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Store, ClipboardCheck, ArrowUpRight, PlusCircle, Briefcase, CreditCard } from 'lucide-react'
+import { Store, ClipboardCheck, ArrowUpRight, PlusCircle, Briefcase, CreditCard, Gift } from 'lucide-react'
 
 export default function QuickActionsGrid({ role = 'worker' }) {
   const isEmployer = role === 'employer'
@@ -9,23 +9,30 @@ export default function QuickActionsGrid({ role = 'worker' }) {
     {
       to: '/marketplace',
       title: 'Browse Tasks',
-      desc: 'Find new micro-tasks to earn',
+      desc: 'Find micro-tasks to earn',
       icon: Store,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-brand-primary border-emerald-500/20',
     },
     {
       to: '/my-submissions',
       title: 'My Submissions',
-      desc: 'Track your submitted proofs',
+      desc: 'Track submitted proofs',
       icon: ClipboardCheck,
       color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
     },
     {
       to: '/withdraw',
-      title: 'Withdraw Earnings',
+      title: 'Withdraw',
       desc: 'Cash out to bKash / Nagad',
       icon: ArrowUpRight,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    },
+    {
+      to: '/referrals',
+      title: 'Refer & Earn',
+      desc: '5% lifetime commission',
+      icon: Gift,
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
   ]
 
@@ -33,23 +40,30 @@ export default function QuickActionsGrid({ role = 'worker' }) {
     {
       to: '/create-task',
       title: 'Post a Task',
-      desc: 'Launch a new micro-job campaign',
+      desc: 'Launch micro-job campaign',
       icon: PlusCircle,
       color: 'bg-emerald-500/10 text-emerald-600 dark:text-brand-primary border-emerald-500/20',
     },
     {
       to: '/review-submissions',
       title: 'Review Proofs',
-      desc: 'Approve or reject worker submissions',
+      desc: 'Approve or reject submissions',
       icon: Briefcase,
       color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
     },
     {
       to: '/deposit',
       title: 'Deposit Funds',
-      desc: 'Top up your employer escrow balance',
+      desc: 'Top up escrow balance',
       icon: CreditCard,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    },
+    {
+      to: '/referrals',
+      title: 'Refer & Earn',
+      desc: '5% lifetime commission',
+      icon: Gift,
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
   ]
 
@@ -60,7 +74,7 @@ export default function QuickActionsGrid({ role = 'worker' }) {
       <h3 className="font-display font-bold text-sm sm:text-base text-[#0F172A] dark:text-[#F1F5F9]">
         Quick Actions
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {actions.map((act) => (
           <Link
             key={act.title}

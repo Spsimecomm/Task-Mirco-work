@@ -433,3 +433,269 @@ grant execute on function public.submit_task_proof(uuid, text, text) to authenti
 grant execute on function public.approve_submission(uuid) to authenticated;
 grant execute on function public.reject_submission(uuid, text) to authenticated;
 grant execute on function public.request_withdrawal(numeric, text, text) to authenticated;
+
+-- ============================================================================
+-- REFERRAL & COMMISSION SHARING SYSTEM
+-- ============================================================================
+
+-- Add referral fields to profiles
+alter table public.profiles
+  add column if not exists referral_code text,
+  add column if not exists referred_by uuid references public.profiles(id) on delete set null;
+
+create unique index if not exists idx_profiles_referral_code on public.profiles(upper(referral_code));
+create index if not exists idx_profiles_referred_by on public.profiles(referred_by);
+
+-- Referral Commissions Table
+create table if not exists public.referral_commissions (
+  id                uuid primary key default gen_random_uuid(),
+  referrer_id       uuid not null references public.profiles(id) on delete cascade,
+  referred_id       uuid not null references public.profiles(id) on delete cascade,
+  source_type       text not null check (source_type in ('task_approval', 'deposit')),
+  source_id         uuid not null,
+  eligible_amount   numeric(12,2) not null check (eligible_amount > 0),
+  commission_rate   numeric(5,2) not null default 5.00,
+  commission_amount numeric(12,2) not null check (commission_amount >= 0),
+  status            text not null default 'completed' check (status in ('completed', 'pending', 'reversed')),
+  created_at        timestamptz not null default now(),
+  constraint uq_referral_commissions_source unique (source_type, source_id)
+);
+
+create index if not exists idx_referral_commissions_referrer on public.referral_commissions(referrer_id);
+create index if not exists idx_referral_commissions_referred on public.referral_commissions(referred_id);
+create index if not exists idx_referral_commissions_created on public.referral_commissions(created_at desc);
+
+alter table public.referral_commissions enable row level security;
+
+drop policy if exists "referral_commissions_select_own_or_admin" on public.referral_commissions;
+create policy "referral_commissions_select_own_or_admin"
+  on public.referral_commissions for select
+  to authenticated
+  using (
+    referrer_id = auth.uid()
+    or referred_id = auth.uid()
+    or public.is_admin()
+  );
+
+-- ============================================================================
+-- SYSTEM SETTINGS & DYNAMIC COMMISSION CONTROL
+-- ============================================================================
+
+create table if not exists public.system_settings (
+  key         text primary key,
+  value       text not null,
+  label       text not null,
+  description text,
+  updated_at  timestamptz not null default now(),
+  updated_by  uuid references public.profiles(id) on delete set null
+);
+
+insert into public.system_settings (key, value, label, description)
+values
+  ('referral_commission_rate', '5.00', 'Referral Commission Rate (%)', 'Percentage of task earnings or deposits awarded to the referrer.'),
+  ('platform_commission_rate', '10.00', 'Platform Task Commission Rate (%)', 'Percentage deducted as platform fee from worker reward upon task approval.'),
+  ('withdrawal_fee_rate', '2.00', 'Withdrawal Processing Fee (%)', 'Fee percentage deducted on worker cashout requests.')
+on conflict (key) do nothing;
+
+alter table public.system_settings enable row level security;
+
+create policy "system_settings_select_authenticated"
+  on public.system_settings for select
+  to authenticated
+  using (true);
+
+create or replace function public.admin_update_system_setting(p_key text, p_value text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin_role text;
+begin
+  select role into v_admin_role from public.profiles where id = auth.uid();
+  if v_admin_role is distinct from 'admin' then
+    raise exception 'Only administrators can update system settings.';
+  end if;
+
+  insert into public.system_settings (key, value, label, updated_at, updated_by)
+  values (p_key, p_value, p_key, now(), auth.uid())
+  on conflict (key) do update
+    set value = excluded.value,
+        updated_at = now(),
+        updated_by = auth.uid();
+end;
+$$;
+
+grant execute on function public.admin_update_system_setting(text, text) to authenticated;
+
+-- ============================================================================
+-- NOTIFICATIONS & BROADCAST NOTIFICATION SYSTEM
+-- ============================================================================
+
+create table if not exists public.notifications (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid references public.profiles(id) on delete cascade,
+  title       text not null,
+  message     text not null,
+  type        text not null default 'announcement' check (type in ('announcement', 'system', 'commission', 'reward', 'alert')),
+  target_role text not null default 'all' check (target_role in ('all', 'worker', 'employer', 'admin')),
+  created_by  uuid references public.profiles(id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_notifications_user_id on public.notifications(user_id);
+create index if not exists idx_notifications_created_at on public.notifications(created_at desc);
+
+create table if not exists public.notification_reads (
+  notification_id uuid not null references public.notifications(id) on delete cascade,
+  user_id         uuid not null references public.profiles(id) on delete cascade,
+  read_at         timestamptz not null default now(),
+  primary key (notification_id, user_id)
+);
+
+create index if not exists idx_notification_reads_user on public.notification_reads(user_id);
+
+alter table public.notifications enable row level security;
+alter table public.notification_reads enable row level security;
+
+create policy "notifications_select_allowed"
+  on public.notifications for select
+  to authenticated
+  using (
+    user_id = auth.uid()
+    or (
+      user_id is null
+      and (
+        target_role = 'all'
+        or target_role = (select role from public.profiles where id = auth.uid())
+      )
+    )
+    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
+  );
+
+create policy "notification_reads_select_own"
+  on public.notification_reads for select
+  to authenticated
+  using (user_id = auth.uid());
+
+create policy "notification_reads_insert_own"
+  on public.notification_reads for insert
+  to authenticated
+  with check (user_id = auth.uid());
+
+create or replace function public.admin_send_notification(
+  p_title text,
+  p_message text,
+  p_type text default 'announcement',
+  p_target_role text default 'all',
+  p_user_id uuid default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin_role text;
+  v_notif_id uuid;
+begin
+  select role into v_admin_role from public.profiles where id = auth.uid();
+  if v_admin_role is distinct from 'admin' then
+    raise exception 'Only administrators can send notifications.';
+  end if;
+
+  if trim(coalesce(p_title, '')) = '' or trim(coalesce(p_message, '')) = '' then
+    raise exception 'Notification title and message cannot be empty.';
+  end if;
+
+  insert into public.notifications (
+    title,
+    message,
+    type,
+    target_role,
+    user_id,
+    created_by,
+    created_at
+  )
+  values (
+    trim(p_title),
+    trim(p_message),
+    coalesce(p_type, 'announcement'),
+    coalesce(p_target_role, 'all'),
+    p_user_id,
+    auth.uid(),
+    now()
+  )
+  returning id into v_notif_id;
+
+  return v_notif_id;
+end;
+$$;
+
+grant execute on function public.admin_send_notification(text, text, text, text, uuid) to authenticated;
+
+create or replace function public.admin_delete_notification(p_notification_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin_role text;
+begin
+  select role into v_admin_role from public.profiles where id = auth.uid();
+  if v_admin_role is distinct from 'admin' then
+    raise exception 'Only administrators can delete notifications.';
+  end if;
+
+  delete from public.notifications where id = p_notification_id;
+end;
+$$;
+
+grant execute on function public.admin_delete_notification(uuid) to authenticated;
+
+create or replace function public.mark_notification_as_read(p_notification_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.notification_reads (notification_id, user_id, read_at)
+  values (p_notification_id, auth.uid(), now())
+  on conflict (notification_id, user_id) do update
+    set read_at = now();
+end;
+$$;
+
+grant execute on function public.mark_notification_as_read(uuid) to authenticated;
+
+create or replace function public.mark_all_notifications_as_read()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_my_role text;
+begin
+  select role into v_my_role from public.profiles where id = auth.uid();
+
+  insert into public.notification_reads (notification_id, user_id, read_at)
+  select n.id, auth.uid(), now()
+  from public.notifications n
+  where (
+    n.user_id = auth.uid()
+    or (
+      n.user_id is null
+      and (n.target_role = 'all' or n.target_role = v_my_role)
+    )
+  )
+  on conflict (notification_id, user_id) do nothing;
+end;
+$$;
+
+grant execute on function public.mark_all_notifications_as_read() to authenticated;
+
+

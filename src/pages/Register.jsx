@@ -1,23 +1,67 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { UserPlus, Loader2, Briefcase, Hammer } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { UserPlus, Loader2, Briefcase, Hammer, Gift, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { ErrorBanner } from '../components/Shared'
 
 export default function Register() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', role: 'worker' })
+  const [searchParams] = useSearchParams()
+  const [form, setForm] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    role: 'worker',
+    referralCode: '',
+  })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [showReferralInput, setShowReferralInput] = useState(false)
+
+  // Capture referral code from URL query param (?ref=...) or existing saved ref
+  useEffect(() => {
+    const urlRef = searchParams.get('ref') || searchParams.get('referral')
+    if (urlRef) {
+      const cleanRef = urlRef.trim().toUpperCase()
+      setForm((prev) => ({ ...prev, referralCode: cleanRef }))
+      setShowReferralInput(true)
+      try {
+        localStorage.setItem('taskly_ref_code', cleanRef)
+      } catch (e) {
+        // Ignore localStorage restrictions
+      }
+    } else {
+      try {
+        const savedRef = localStorage.getItem('taskly_ref_code')
+        if (savedRef) {
+          setForm((prev) => ({ ...prev, referralCode: savedRef.trim().toUpperCase() }))
+          setShowReferralInput(true)
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const { session } = await signUp(form)
+      const { session } = await signUp({
+        fullName: form.fullName,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        referralCode: form.referralCode,
+      })
+      // Clear saved referral code on success
+      try {
+        localStorage.removeItem('taskly_ref_code')
+      } catch (e) {}
+
       if (session) {
         navigate(form.role === 'employer' ? '/employer' : '/worker')
       } else {
@@ -159,6 +203,43 @@ export default function Register() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="At least 6 characters"
               />
+            </div>
+
+            {/* Referral Code (Optional / Auto-filled) */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <Gift size={13} className="text-emerald-600 dark:text-brand-primary" />
+                  <span>Referral Code (Optional)</span>
+                </label>
+                {!showReferralInput && !form.referralCode && (
+                  <button
+                    type="button"
+                    onClick={() => setShowReferralInput(true)}
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-brand-primary hover:underline"
+                  >
+                    Have a code?
+                  </button>
+                )}
+              </div>
+
+              {(showReferralInput || form.referralCode) && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm uppercase tracking-wider text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                    value={form.referralCode}
+                    onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase().replace(/\s/g, '') })}
+                    placeholder="e.g. TASK1002"
+                  />
+                  {form.referralCode && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-brand-primary bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      <CheckCircle2 size={12} />
+                      <span>Applied</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <ErrorBanner message={error} />

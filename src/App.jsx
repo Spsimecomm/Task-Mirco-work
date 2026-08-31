@@ -21,6 +21,7 @@ import CreateTask from './pages/CreateTask'
 import ReviewSubmissions from './pages/ReviewSubmissions'
 import Deposit from './pages/Deposit'
 import AdminDashboard from './pages/AdminDashboard'
+import Referrals from './pages/Referrals'
 
 export default function App() {
   const { session, profile, role, loading } = useAuth()
@@ -220,6 +221,34 @@ export default function App() {
               isLoading={loading}
             >
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Refer & Earn Routes (All Authenticated Roles) */}
+        <Route
+          path="/referrals"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker', 'employer', 'admin']}
+              isLoading={loading}
+            >
+              <Referrals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/refer-and-earn"
+          element={
+            <ProtectedRoute
+              isAuth={!!session}
+              userRole={role}
+              allowedRoles={['worker', 'employer', 'admin']}
+              isLoading={loading}
+            >
+              <Referrals />
             </ProtectedRoute>
           }
         />

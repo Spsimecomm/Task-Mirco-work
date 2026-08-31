@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Wallet, LayoutGrid, ListChecks, CirclePlus as PlusCircle, LogOut, Menu, X, Briefcase, ClipboardCheck, ArrowDownToLine, ArrowUpFromLine, Sun, Moon, LogIn, UserPlus } from 'lucide-react'
+import { Wallet, LayoutGrid, ListChecks, CirclePlus as PlusCircle, LogOut, Menu, X, Briefcase, ClipboardCheck, ArrowDownToLine, ArrowUpFromLine, Sun, Moon, LogIn, UserPlus, Gift } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import NotificationCenter from './NotificationCenter'
 
 function fmt(n) {
   return `$${Number(n ?? 0).toFixed(2)}`
@@ -20,6 +21,7 @@ export default function Navbar() {
     { to: '/marketplace', label: 'Browse tasks', icon: ListChecks },
     { to: '/my-submissions', label: 'My submissions', icon: ClipboardCheck },
     { to: '/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
+    { to: '/referrals', label: 'Refer & Earn', icon: Gift },
   ]
 
   const employerLinks = [
@@ -27,10 +29,12 @@ export default function Navbar() {
     { to: '/create-task', label: 'Post a task', icon: PlusCircle },
     { to: '/review-submissions', label: 'Review submissions', icon: Briefcase },
     { to: '/deposit', label: 'Deposit', icon: ArrowDownToLine },
+    { to: '/referrals', label: 'Refer & Earn', icon: Gift },
   ]
 
   const adminLinks = [
     { to: '/admin', label: 'Admin dashboard', icon: LayoutGrid },
+    { to: '/referrals', label: 'Referral System', icon: Gift },
   ]
 
   const publicLinks = [
@@ -198,6 +202,9 @@ export default function Navbar() {
               </span>
               <span className="text-xs text-[#64748B] dark:text-slate-400">{role === 'employer' ? 'balance' : role === 'worker' ? 'earned' : 'panel'}</span>
             </div>
+
+            {/* Notification Center */}
+            <NotificationCenter />
 
             {/* Theme Toggle Button */}
             <button

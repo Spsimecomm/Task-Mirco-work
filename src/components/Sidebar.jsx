@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   LogOut,
   ChevronDown,
+  Gift,
   X
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -33,6 +34,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { to: '/marketplace', label: 'Marketplace', icon: Store },
     { to: '/my-submissions', label: 'My Submissions', icon: ClipboardCheck },
     { to: '/withdraw', label: 'Withdraw', icon: ArrowUpRight },
+    { to: '/referrals', label: 'Refer & Earn', icon: Gift },
   ]
 
   const employerNav = [
@@ -40,10 +42,12 @@ export default function Sidebar({ isOpen, onClose }) {
     { to: '/create-task', label: 'Post a Task', icon: PlusCircle },
     { to: '/review-submissions', label: 'Review Submissions', icon: Briefcase },
     { to: '/deposit', label: 'Deposit Funds', icon: CreditCard },
+    { to: '/referrals', label: 'Refer & Earn', icon: Gift },
   ]
 
   const adminNav = [
     { to: '/admin', label: 'Admin Console', icon: ShieldCheck },
+    { to: '/referrals', label: 'Referral Engine', icon: Gift },
   ]
 
   const mainLinks = role === 'admin' ? adminNav : role === 'employer' ? employerNav : workerNav

@@ -177,12 +177,72 @@ const initialMockData = {
       created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
     },
   ],
+  notifications: [
+    {
+      id: 'notif-1',
+      user_id: null,
+      title: 'Welcome to Taskly Micro-Job Network! 🚀',
+      message: 'Earn money completing fast online micro-tasks or post tasks to grow your audience and business.',
+      type: 'announcement',
+      target_role: 'all',
+      created_by: 'usr-admin-1',
+      created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    },
+    {
+      id: 'notif-2',
+      user_id: null,
+      title: '5% Instant Referral Bonus Activated 🎁',
+      message: 'Share your referral link with friends. Earn lifetime 5% commission on all their earnings and deposits.',
+      type: 'reward',
+      target_role: 'all',
+      created_by: 'usr-admin-1',
+      created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    },
+    {
+      id: 'notif-3',
+      user_id: 'usr-worker-1',
+      title: 'Task Submission Approved! 💰',
+      message: 'Your proof for "Watch 3-minute tech review video" was approved. $0.45 has been added to your earnings balance.',
+      type: 'commission',
+      target_role: 'worker',
+      created_by: 'usr-employer-1',
+      created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+    },
+  ],
+  notification_reads: [],
+  system_settings: [
+    { key: 'referral_commission_rate', value: '5.00', label: 'Referral Commission Rate (%)', description: 'Percentage of task earnings awarded to referrer' },
+    { key: 'platform_commission_rate', value: '10.00', label: 'Platform Commission Rate (%)', description: 'Platform fee percentage on task rewards' },
+    { key: 'withdrawal_fee_rate', value: '2.00', label: 'Withdrawal Processing Fee (%)', description: 'Fee percentage on withdrawals' },
+  ],
+  referral_commissions: [
+    {
+      id: 'rc-1',
+      referrer_id: 'usr-worker-1',
+      referred_id: 'usr-employer-1',
+      amount: 0.25,
+      rate: 5.0,
+      source_type: 'task_earning',
+      source_id: 'task-1',
+      created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+    },
+  ],
 }
 
 function getStoredMockDb() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return {
+        ...initialMockData,
+        ...parsed,
+        notifications: parsed.notifications || initialMockData.notifications,
+        notification_reads: parsed.notification_reads || initialMockData.notification_reads,
+        system_settings: parsed.system_settings || initialMockData.system_settings,
+        referral_commissions: parsed.referral_commissions || initialMockData.referral_commissions,
+      }
+    }
   } catch (e) {
     // fallback
   }
@@ -305,6 +365,7 @@ function createMockClient() {
 
     from(table) {
       let filters = []
+      let orConditions = []
       let orderField = null
       let orderAsc = true
       let limitCount = null
@@ -330,7 +391,10 @@ function createMockClient() {
         if (operation === 'update') {
           let updatedCount = 0
           db[table] = items.map((item) => {
-            const matches = filters.every(({ col, val }) => item[col] === val)
+            const matches = filters.every(({ col, val, op }) => {
+              if (op === 'neq') return String(item[col]) !== String(val)
+              return String(item[col]) === String(val)
+            })
             if (matches) {
               updatedCount++
               return { ...item, ...payload }
@@ -342,16 +406,52 @@ function createMockClient() {
         }
 
         if (operation === 'delete') {
-          db[table] = items.filter((item) => !filters.every(({ col, val }) => item[col] === val))
+          db[table] = items.filter((item) => {
+            return !filters.every(({ col, val, op }) => {
+              if (op === 'neq') return String(item[col]) !== String(val)
+              return String(item[col]) === String(val)
+            })
+          })
           saveMockDb(db)
           return { data: null, error: null }
         }
 
         // SELECT query
         let result = items.filter((item) => {
-          return filters.every(({ col, val }) => {
+          // Check standard AND filters
+          const matchesFilters = filters.every(({ col, val, op }) => {
+            if (op === 'neq') return String(item[col]) !== String(val)
+            if (op === 'in') return Array.isArray(val) && val.map(String).includes(String(item[col]))
+            if (op === 'is') {
+              if (val === null) return item[col] === null || item[col] === undefined
+              return item[col] === val
+            }
+            if (op === 'gt') return Number(item[col]) > Number(val)
+            if (op === 'gte') return Number(item[col]) >= Number(val)
+            if (op === 'lt') return Number(item[col]) < Number(val)
+            if (op === 'lte') return Number(item[col]) <= Number(val)
+            if (op === 'like' || op === 'ilike') {
+              const str = String(item[col] || '').toLowerCase()
+              const search = String(val || '').replace(/%/g, '').toLowerCase()
+              return str.includes(search)
+            }
             return String(item[col]) === String(val)
           })
+
+          if (!matchesFilters) return false
+
+          // Check OR conditions
+          if (orConditions.length > 0) {
+            const matchesOr = orConditions.some((cond) => {
+              if (typeof cond === 'function') {
+                return cond(item)
+              }
+              return true
+            })
+            if (!matchesOr) return false
+          }
+
+          return true
         })
 
         // Hydrate relations (e.g. tasks(title, category, reward) on submissions)
@@ -393,7 +493,76 @@ function createMockClient() {
           return builder
         },
         eq(col, val) {
-          filters.push({ col, val })
+          filters.push({ col, val, op: 'eq' })
+          return builder
+        },
+        neq(col, val) {
+          filters.push({ col, val, op: 'neq' })
+          return builder
+        },
+        in(col, valArray) {
+          filters.push({ col, val: valArray, op: 'in' })
+          return builder
+        },
+        is(col, val) {
+          filters.push({ col, val, op: 'is' })
+          return builder
+        },
+        gt(col, val) {
+          filters.push({ col, val, op: 'gt' })
+          return builder
+        },
+        gte(col, val) {
+          filters.push({ col, val, op: 'gte' })
+          return builder
+        },
+        lt(col, val) {
+          filters.push({ col, val, op: 'lt' })
+          return builder
+        },
+        lte(col, val) {
+          filters.push({ col, val, op: 'lte' })
+          return builder
+        },
+        like(col, pattern) {
+          filters.push({ col, val: pattern, op: 'like' })
+          return builder
+        },
+        ilike(col, pattern) {
+          filters.push({ col, val: pattern, op: 'ilike' })
+          return builder
+        },
+        or(clause) {
+          if (typeof clause === 'function') {
+            orConditions.push(clause)
+            return builder
+          }
+          if (typeof clause === 'string') {
+            orConditions.push((item) => {
+              // Handle expressions like "user_id.eq.usr-1,and(user_id.is.null,target_role.in.(all,worker))"
+              // Direct match against target_role or user_id
+              if (clause.includes('user_id.eq.')) {
+                const match = clause.match(/user_id\.eq\.([^,]+)/)
+                if (match && item.user_id === match[1].trim()) return true
+              }
+              if (clause.includes('user_id.is.null')) {
+                if (!item.user_id) {
+                  if (clause.includes('target_role.in.')) {
+                    const rolesMatch = clause.match(/target_role\.in\.\(([^)]+)\)/)
+                    if (rolesMatch) {
+                      const allowed = rolesMatch[1].split(',').map((s) => s.trim())
+                      if (allowed.includes(item.target_role) || allowed.includes('all')) return true
+                    }
+                  } else {
+                    return true
+                  }
+                }
+              }
+              // Fallback for notifications targeting everyone
+              if (item.target_role === 'all' || !item.user_id) return true
+              return false
+            })
+          }
           return builder
         },
         order(field, { ascending = true } = {}) {
@@ -435,6 +604,84 @@ function createMockClient() {
       const db = getStoredMockDb()
       const currentUserId = activeSession?.user?.id || 'usr-worker-1'
       const currentProfile = db.profiles.find((p) => p.id === currentUserId)
+
+      if (funcName === 'admin_send_notification') {
+        const { p_title, p_message, p_type, p_target_role, p_user_id } = params
+        const newNotif = {
+          id: 'notif-' + Math.random().toString(36).slice(2, 9),
+          user_id: p_user_id || null,
+          title: p_title,
+          message: p_message,
+          type: p_type || 'announcement',
+          target_role: p_target_role || 'all',
+          created_by: currentUserId,
+          created_at: new Date().toISOString(),
+        }
+        db.notifications = db.notifications || []
+        db.notifications.unshift(newNotif)
+        saveMockDb(db)
+        return { data: newNotif.id, error: null }
+      }
+
+      if (funcName === 'admin_delete_notification') {
+        const { p_notification_id } = params
+        db.notifications = (db.notifications || []).filter((n) => n.id !== p_notification_id)
+        saveMockDb(db)
+        return { data: null, error: null }
+      }
+
+      if (funcName === 'admin_update_system_setting') {
+        const { p_key, p_value } = params
+        db.system_settings = db.system_settings || []
+        const setting = db.system_settings.find((s) => s.key === p_key)
+        if (setting) {
+          setting.value = p_value
+          setting.updated_at = new Date().toISOString()
+        } else {
+          db.system_settings.push({
+            key: p_key,
+            value: p_value,
+            label: p_key,
+            updated_at: new Date().toISOString(),
+          })
+        }
+        saveMockDb(db)
+        return { data: null, error: null }
+      }
+
+      if (funcName === 'mark_notification_as_read') {
+        const { p_notification_id } = params
+        db.notification_reads = db.notification_reads || []
+        if (!db.notification_reads.some((r) => r.notification_id === p_notification_id && r.user_id === currentUserId)) {
+          db.notification_reads.push({
+            notification_id: p_notification_id,
+            user_id: currentUserId,
+            read_at: new Date().toISOString(),
+          })
+          saveMockDb(db)
+        }
+        return { data: null, error: null }
+      }
+
+      if (funcName === 'mark_all_notifications_as_read') {
+        db.notifications = db.notifications || []
+        db.notification_reads = db.notification_reads || []
+        const userRole = currentProfile?.role || 'worker'
+        const applicable = db.notifications.filter((n) =>
+          n.user_id === currentUserId || (!n.user_id && (n.target_role === 'all' || n.target_role === userRole))
+        )
+        applicable.forEach((n) => {
+          if (!db.notification_reads.some((r) => r.notification_id === n.id && r.user_id === currentUserId)) {
+            db.notification_reads.push({
+              notification_id: n.id,
+              user_id: currentUserId,
+              read_at: new Date().toISOString(),
+            })
+          }
+        })
+        saveMockDb(db)
+        return { data: null, error: null }
+      }
 
       if (funcName === 'create_task_with_funding') {
         const { p_title, p_category, p_description, p_proof_instructions, p_reward, p_slots } = params
