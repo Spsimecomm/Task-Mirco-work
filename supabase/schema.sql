@@ -1,13 +1,12 @@
 -- ============================================================================
--- TASKLY - SINGLE UNIFIED PRODUCTION-READY SUPABASE DATABASE SCHEMA
+-- TASKLY - COMPLETE PRODUCTION-READY SUPABASE DATABASE SCHEMA & BACKEND RPCs
 -- ============================================================================
--- Clean, optimized, consolidated schema with:
--- 1. No redundant/duplicate definitions or conflicting trigger/RPC logic.
--- 2. Strict User Role Preservation (worker / employer / admin).
--- 3. Escrow Security & Double-Spend Prevention via Atomic RPCs with FOR UPDATE locks.
--- 4. Idempotent 5% Referral Commission Engine (Worker-only).
--- 5. Standardized schema for notifications (message, user_id), deposit_requests, and earnings.
--- 6. Safe Cascading Foreign Keys and Flexible Check Constraints.
+-- 1. Strict User Role Preservation (Worker / Employer / Admin) on Signup
+-- 2. Employer Deposit Requests & Admin Approval Flow with Balance Crediting
+-- 3. Atomic Escrow Funding, Proof Submission, and Approval / Refund Engine
+-- 4. Idempotent 5% Referral Commission Engine for Workers
+-- 5. Open & Flexible Marketplace Task Browsing with Zero RLS Bottlenecks
+-- 6. Full Realtime Sync, Cascading Foreign Keys, and Safe Non-Negative Constraints
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -20,7 +19,7 @@ create extension if not exists "pgcrypto";
 -- 2. CORE TABLE DEFINITIONS
 -- ----------------------------------------------------------------------------
 
--- A. Profiles
+-- A. Profiles (Worker / Employer / Admin)
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null default 'New User',
@@ -196,7 +195,7 @@ values
 on conflict (key) do nothing;
 
 -- ----------------------------------------------------------------------------
--- 3. ENSURE COLUMNS & SYNCHRONIZE LEGACY FIELDS
+-- 3. ENSURE COLUMNS & SYNC LEGACY FIELDS
 -- ----------------------------------------------------------------------------
 alter table public.profiles
   add column if not exists full_name text default 'New User',
@@ -210,8 +209,13 @@ alter table public.profiles
   add column if not exists updated_at timestamptz not null default timezone('utc'::text, now());
 
 alter table public.tasks
+  add column if not exists employer_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists title text not null default '',
   add column if not exists category text default 'Micro Task',
+  add column if not exists description text not null default '',
   add column if not exists proof_instructions text default 'Provide proof of completion',
+  add column if not exists reward numeric(12,2) not null default 0.50,
   add column if not exists max_workers int not null default 1,
   add column if not exists slots_total int not null default 1,
   add column if not exists slots_filled int not null default 0,
@@ -220,35 +224,83 @@ alter table public.tasks
   add column if not exists updated_at timestamptz not null default timezone('utc'::text, now());
 
 alter table public.submissions
+  add column if not exists task_id uuid references public.tasks(id) on delete cascade,
+  add column if not exists worker_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists employer_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade,
   add column if not exists worker_name text,
   add column if not exists proof text default '',
   add column if not exists proof_text text,
   add column if not exists proof_url text,
   add column if not exists proof_file_url text,
+  add column if not exists status text not null default 'pending',
   add column if not exists rejection_reason text,
   add column if not exists reviewed_at timestamptz,
   add column if not exists updated_at timestamptz not null default timezone('utc'::text, now());
 
 alter table public.withdrawals
+  add column if not exists worker_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists method text not null default 'bKash',
+  add column if not exists amount numeric(12,2) not null default 0.00,
   add column if not exists fee_amount numeric(12,2) not null default 0.00,
   add column if not exists net_amount numeric(12,2) not null default 0.00,
   add column if not exists account_number text,
   add column if not exists account_details text,
+  add column if not exists status text not null default 'pending',
   add column if not exists rejection_reason text,
+  add column if not exists admin_notes text,
   add column if not exists updated_at timestamptz not null default timezone('utc'::text, now());
+
+alter table public.transactions
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists type text not null default 'deposit',
+  add column if not exists amount numeric(12,2) not null default 0.00,
+  add column if not exists status text not null default 'completed',
+  add column if not exists meta jsonb default '{}'::jsonb,
+  add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
 
 alter table public.deposit_requests
   add column if not exists employer_id uuid references public.profiles(id) on delete cascade,
   add column if not exists user_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists amount numeric(12,2) not null default 0.00,
   add column if not exists method text,
   add column if not exists payment_method text,
   add column if not exists sender_mobile text,
   add column if not exists sender_number text,
   add column if not exists trx_id text,
   add column if not exists transaction_id text,
+  add column if not exists status text not null default 'pending',
   add column if not exists reviewed_by uuid references public.profiles(id) on delete set null,
   add column if not exists reviewed_at timestamptz,
-  add column if not exists rejection_reason text;
+  add column if not exists rejection_reason text,
+  add column if not exists admin_notes text,
+  add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
+
+alter table public.notifications
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists title text not null default '',
+  add column if not exists message text not null default '',
+  add column if not exists type text not null default 'announcement',
+  add column if not exists target_role text not null default 'all',
+  add column if not exists created_by uuid references public.profiles(id) on delete set null,
+  add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
+
+alter table public.notification_reads
+  add column if not exists notification_id uuid references public.notifications(id) on delete cascade,
+  add column if not exists user_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists read_at timestamptz not null default timezone('utc'::text, now());
+
+alter table public.referral_commissions
+  add column if not exists referrer_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists referred_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists source_type text not null default 'task_approval',
+  add column if not exists source_id uuid,
+  add column if not exists eligible_amount numeric(12,2) not null default 0.00,
+  add column if not exists commission_rate numeric(5,2) not null default 5.00,
+  add column if not exists commission_amount numeric(12,2) not null default 0.00,
+  add column if not exists status text not null default 'completed',
+  add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
 
 update public.deposit_requests
 set employer_id = coalesce(employer_id, user_id),
@@ -261,26 +313,19 @@ set employer_id = coalesce(employer_id, user_id),
     transaction_id = coalesce(transaction_id, trx_id, '')
 where employer_id is null or user_id is null;
 
+update public.tasks set employer_id = coalesce(employer_id, user_id) where employer_id is null;
+update public.submissions set worker_id = coalesce(worker_id, user_id) where worker_id is null;
+update public.withdrawals set worker_id = coalesce(worker_id, user_id) where worker_id is null;
+
 -- ----------------------------------------------------------------------------
--- 4. CLEAN CONSTRAINTS
+-- 4. CLEAN CONSTRAINTS & INDEXES (100% IDEMPOTENT)
 -- ----------------------------------------------------------------------------
-do $$
-declare
-  r record;
-begin
-  for r in (
-    select conrelid::regclass as relname, conname
-    from pg_constraint
-    where connamespace = 'public'::regnamespace
-      and contype = 'c'
-      and conrelid::regclass::text in (
-        'public.profiles', 'public.tasks', 'public.submissions',
-        'public.referral_commissions', 'public.withdrawals', 'public.transactions'
-      )
-  ) loop
-    execute 'alter table ' || r.relname || ' drop constraint if exists ' || quote_ident(r.conname);
-  end loop;
-end $$;
+-- Explicitly drop existing check constraints to prevent ERROR 42710 (constraint already exists)
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles drop constraint if exists profiles_earnings_check;
+alter table public.profiles drop constraint if exists profiles_pending_check;
+alter table public.profiles drop constraint if exists profiles_spent_check;
+alter table public.profiles drop constraint if exists profiles_deposited_check;
 
 alter table public.profiles
   add constraint profiles_role_check check (role in ('worker', 'employer', 'admin')),
@@ -289,6 +334,12 @@ alter table public.profiles
   add constraint profiles_spent_check check (spent >= 0),
   add constraint profiles_deposited_check check (deposited >= 0);
 
+alter table public.tasks drop constraint if exists tasks_status_check;
+alter table public.tasks drop constraint if exists tasks_reward_check;
+alter table public.tasks drop constraint if exists tasks_max_workers_check;
+alter table public.tasks drop constraint if exists tasks_slots_total_check;
+alter table public.tasks drop constraint if exists tasks_slots_filled_check;
+
 alter table public.tasks
   add constraint tasks_status_check check (status in ('open', 'completed', 'cancelled', 'closed', 'active', 'paused', 'in_progress', 'draft', 'pending')),
   add constraint tasks_reward_check check (reward >= 0),
@@ -296,23 +347,31 @@ alter table public.tasks
   add constraint tasks_slots_total_check check (slots_total > 0),
   add constraint tasks_slots_filled_check check (slots_filled >= 0);
 
+alter table public.submissions drop constraint if exists submissions_status_check;
 alter table public.submissions
   add constraint submissions_status_check check (status in ('pending', 'approved', 'rejected', 'completed', 'cancelled'));
 
+alter table public.referral_commissions drop constraint if exists referral_commissions_amount_check;
+alter table public.referral_commissions drop constraint if exists referral_commissions_status_check;
 alter table public.referral_commissions
   add constraint referral_commissions_amount_check check (commission_amount >= 0),
   add constraint referral_commissions_status_check check (status in ('completed', 'cancelled', 'pending', 'paid'));
 
+alter table public.withdrawals drop constraint if exists withdrawals_status_check;
+alter table public.withdrawals drop constraint if exists withdrawals_amount_check;
 alter table public.withdrawals
   add constraint withdrawals_status_check check (status in ('pending', 'completed', 'rejected', 'approved', 'cancelled')),
   add constraint withdrawals_amount_check check (amount > 0);
 
+alter table public.transactions drop constraint if exists transactions_type_check;
+alter table public.transactions drop constraint if exists transactions_amount_check;
+alter table public.transactions drop constraint if exists transactions_status_check;
 alter table public.transactions
   add constraint transactions_type_check check (type in ('deposit', 'earning', 'withdrawal', 'escrow_hold', 'escrow_release', 'escrow_refund', 'admin_adjustment', 'spend', 'commission', 'fee', 'referral')),
   add constraint transactions_amount_check check (amount >= 0),
   add constraint transactions_status_check check (status in ('pending', 'completed', 'rejected', 'failed', 'approved'));
 
--- Indexes for high-performance querying
+-- Performance indexes
 create unique index if not exists idx_profiles_referral_code_upper on public.profiles (upper(referral_code)) where referral_code is not null;
 create index if not exists idx_profiles_referred_by on public.profiles(referred_by);
 create index if not exists idx_tasks_employer_id on public.tasks(employer_id);
@@ -320,6 +379,10 @@ create index if not exists idx_tasks_status on public.tasks(status);
 create index if not exists idx_submissions_task_id on public.submissions(task_id);
 create index if not exists idx_submissions_worker_id on public.submissions(worker_id);
 create index if not exists idx_submissions_employer_id on public.submissions(employer_id);
+create index if not exists idx_deposit_requests_employer on public.deposit_requests(employer_id);
+create index if not exists idx_deposit_requests_status on public.deposit_requests(status);
+create index if not exists idx_withdrawals_worker on public.withdrawals(worker_id);
+create index if not exists idx_withdrawals_status on public.withdrawals(status);
 create index if not exists idx_notifications_user_id on public.notifications(user_id);
 create index if not exists idx_notifications_created_at on public.notifications(created_at desc);
 
@@ -357,7 +420,7 @@ begin
 end;
 $$;
 
--- B. Handle User Registration (Preserves exact role from signup metadata)
+-- B. Handle User Registration (Strict Role Preservation from Metadata)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -414,7 +477,7 @@ begin
     v_my_ref_code := null;
   end if;
 
-  -- 4. Upsert profile safely without altering existing roles
+  -- 4. Upsert profile safely without overwriting existing role
   insert into public.profiles (
     id, full_name, role, referral_code, referred_by,
     earnings, pending, spent, deposited, created_at, updated_at
@@ -424,8 +487,11 @@ begin
     0.00, 0.00, 0.00, 0.00, timezone('utc'::text, now()), timezone('utc'::text, now())
   )
   on conflict (id) do update set
-    full_name = excluded.full_name,
-    role = coalesce(public.profiles.role, excluded.role),
+    full_name = coalesce(nullif(excluded.full_name, 'New User'), public.profiles.full_name),
+    role = case
+      when public.profiles.role in ('worker', 'employer', 'admin') then public.profiles.role
+      else excluded.role
+    end,
     referral_code = coalesce(public.profiles.referral_code, excluded.referral_code),
     referred_by = coalesce(public.profiles.referred_by, excluded.referred_by),
     updated_at = timezone('utc'::text, now());
@@ -441,7 +507,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Drop previous conflicting submission trigger to avoid double payout/refund bugs
+-- Drop previous conflicting submission trigger to prevent double payout bugs
 drop trigger if exists trg_submission_status_change on public.submissions;
 drop function if exists public.handle_submission_status_change();
 
@@ -492,7 +558,7 @@ begin
     return null;
   end if;
 
-  -- 3. Determine commission rate
+  -- 3. Determine commission rate (default 5%)
   if p_rate is not null and p_rate >= 0 then
     v_rate := p_rate;
   else
@@ -557,7 +623,7 @@ exception when others then
 end;
 $$;
 
--- D. Create Task with Escrow Funding
+-- D. Create Task with Escrow Funding (Deducts Deposited, Adds to Pending Escrow)
 create or replace function public.create_task_with_funding(
   p_title text,
   p_category text,
@@ -660,6 +726,7 @@ begin
     raise exception 'This task has no remaining slots.';
   end if;
 
+  -- 1. Insert submission
   insert into public.submissions (
     task_id, worker_id, employer_id, worker_name, proof, proof_text, proof_url, proof_file_url, status, created_at, updated_at
   )
@@ -670,12 +737,14 @@ begin
   )
   returning id into v_sub_id;
 
+  -- 2. Update task slots filled
   update public.tasks
   set slots_filled = slots_filled + 1,
       status = case when slots_filled + 1 >= slots_total then 'closed' else status end,
       updated_at = timezone('utc'::text, now())
   where id = p_task_id;
 
+  -- 3. Increase worker pending balance
   update public.profiles
   set pending = pending + v_task.reward,
       updated_at = timezone('utc'::text, now())
@@ -718,7 +787,7 @@ begin
   select * into v_task from public.tasks where id = v_sub.task_id for update;
   if not found then raise exception 'Task not found.'; end if;
 
-  -- Platform commission calculation
+  -- Platform commission calculation (default 10%)
   select value into v_setting from public.system_settings where key = 'platform_commission_rate';
   v_rate := greatest(0, least(coalesce(nullif(v_setting, '')::numeric, 10.00), 100));
   v_commission := round((v_task.reward * v_rate / 100.00)::numeric, 2);
@@ -729,14 +798,14 @@ begin
   set status = 'approved', reviewed_at = timezone('utc'::text, now()), updated_at = timezone('utc'::text, now())
   where id = p_submission_id;
 
-  -- 2. Credit worker earnings
+  -- 2. Credit worker earnings and deduct pending
   update public.profiles
   set earnings = earnings + v_worker_payout,
       pending = greatest(pending - v_task.reward, 0),
       updated_at = timezone('utc'::text, now())
   where id = v_sub.worker_id;
 
-  -- 3. Deduct employer escrow
+  -- 3. Deduct employer escrow pending and add to spent
   update public.profiles
   set pending = greatest(pending - v_task.reward, 0),
       spent = spent + v_task.reward,
@@ -748,13 +817,13 @@ begin
   values (p_submission_id, v_sub.task_id, v_sub.worker_id, v_sub.employer_id, v_task.reward, v_rate, v_commission, timezone('utc'::text, now()))
   on conflict do nothing;
 
-  -- 5. Record transactions
+  -- 5. Record financial transactions
   insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values
     (v_sub.worker_id, 'earning', v_worker_payout, 'completed', jsonb_build_object('submission_id', p_submission_id, 'task_id', v_sub.task_id, 'commission', v_commission), timezone('utc'::text, now())),
     (v_sub.employer_id, 'spend', v_task.reward, 'completed', jsonb_build_object('submission_id', p_submission_id, 'task_id', v_sub.task_id), timezone('utc'::text, now()));
 
-  -- 6. Trigger referral commission
+  -- 6. Trigger referral commission for referrer
   perform public.process_referral_commission(v_sub.worker_id, 'task_approval', p_submission_id, v_task.reward, null);
 
   -- 7. Notify worker
@@ -812,14 +881,14 @@ begin
   set pending = greatest(pending - v_task.reward, 0), updated_at = timezone('utc'::text, now())
   where id = v_sub.worker_id;
 
-  -- 3. Employer escrow refund
+  -- 3. Employer escrow refund (pending -> deposited)
   update public.profiles
   set pending = greatest(pending - v_task.reward, 0),
       deposited = deposited + v_task.reward,
       updated_at = timezone('utc'::text, now())
   where id = v_sub.employer_id;
 
-  -- 4. Reopen slot
+  -- 4. Reopen slot on task
   update public.tasks
   set slots_filled = greatest(slots_filled - 1, 0), status = 'open', updated_at = timezone('utc'::text, now())
   where id = v_sub.task_id;
@@ -848,93 +917,194 @@ returns void language plpgsql security definer set search_path = public as $$
 begin perform public.reject_submission(p_submission_id, p_reason); end;
 $$;
 
--- H. Deposit & Withdrawal Request RPCs
+-- H. Deposit Request & Admin Review RPCs
 create or replace function public.request_deposit(p_amount numeric, p_method text, p_sender_mobile text, p_trx_id text)
 returns uuid
 language plpgsql security definer set search_path = public
 as $$
-declare v_role text; v_id uuid;
+declare
+  v_role text;
+  v_id uuid;
 begin
   select role into v_role from public.profiles where id = auth.uid();
-  if v_role is distinct from 'employer' then raise exception 'Only employers can request deposits.'; end if;
-  if p_amount is null or p_amount <= 0 then raise exception 'Deposit amount must be greater than zero.'; end if;
-  if lower(trim(p_method)) not in ('bkash', 'nagad') then raise exception 'Payment method must be bKash or Nagad.'; end if;
-  if btrim(coalesce(p_sender_mobile, '')) = '' then raise exception 'Sender mobile number is required.'; end if;
-  if btrim(coalesce(p_trx_id, '')) = '' then raise exception 'Transaction ID is required.'; end if;
+  if v_role is distinct from 'employer' and v_role is distinct from 'admin' then
+    raise exception 'Only employers can request deposits.';
+  end if;
+  if p_amount is null or p_amount <= 0 then
+    raise exception 'Deposit amount must be greater than zero.';
+  end if;
+  if lower(trim(p_method)) not in ('bkash', 'nagad') then
+    raise exception 'Payment method must be bKash or Nagad.';
+  end if;
+  if btrim(coalesce(p_sender_mobile, '')) = '' then
+    raise exception 'Sender mobile number is required.';
+  end if;
+  if btrim(coalesce(p_trx_id, '')) = '' then
+    raise exception 'Transaction ID is required.';
+  end if;
   if exists(select 1 from public.deposit_requests where lower(coalesce(trx_id, transaction_id, '')) = lower(btrim(p_trx_id))) then
     raise exception 'This transaction ID has already been submitted.';
   end if;
 
-  insert into public.deposit_requests (employer_id, user_id, amount, method, payment_method, sender_mobile, sender_number, trx_id, transaction_id, status, created_at)
-  values (auth.uid(), auth.uid(), p_amount, lower(trim(p_method)), lower(trim(p_method)), btrim(p_sender_mobile), btrim(p_sender_mobile), btrim(p_trx_id), btrim(p_trx_id), 'pending', timezone('utc'::text, now()))
+  insert into public.deposit_requests (
+    employer_id, user_id, amount, method, payment_method,
+    sender_mobile, sender_number, trx_id, transaction_id, status, created_at
+  )
+  values (
+    auth.uid(), auth.uid(), p_amount, lower(trim(p_method)), lower(trim(p_method)),
+    btrim(p_sender_mobile), btrim(p_sender_mobile), btrim(p_trx_id), btrim(p_trx_id),
+    'pending', timezone('utc'::text, now())
+  )
   returning id into v_id;
+
   return v_id;
 end; $$;
 
 create or replace function public.admin_approve_deposit(p_deposit_id uuid)
 returns void language plpgsql security definer set search_path = public
 as $$
-declare v_dep public.deposit_requests%rowtype; v_role text;
+declare
+  v_dep public.deposit_requests%rowtype;
+  v_role text;
+  v_target_user_id uuid;
 begin
   select role into v_role from public.profiles where id = auth.uid();
-  if v_role is distinct from 'admin' then raise exception 'Only admins can approve deposits.'; end if;
+  if v_role is distinct from 'admin' then
+    raise exception 'Only admins can approve deposits.';
+  end if;
   select * into v_dep from public.deposit_requests where id = p_deposit_id for update;
-  if not found then raise exception 'Deposit request not found.'; end if;
-  if v_dep.status <> 'pending' then raise exception 'This deposit has already been reviewed.'; end if;
+  if not found then
+    raise exception 'Deposit request not found.';
+  end if;
+  if v_dep.status <> 'pending' then
+    raise exception 'This deposit has already been reviewed.';
+  end if;
 
-  update public.deposit_requests set status = 'approved', reviewed_at = timezone('utc'::text, now()), reviewed_by = auth.uid() where id = p_deposit_id;
-  update public.profiles set deposited = deposited + v_dep.amount, updated_at = timezone('utc'::text, now()) where id = coalesce(v_dep.employer_id, v_dep.user_id);
+  v_target_user_id := coalesce(v_dep.employer_id, v_dep.user_id);
+  if v_target_user_id is null then
+    raise exception 'No user associated with this deposit request.';
+  end if;
+
+  -- 1. Mark deposit approved
+  update public.deposit_requests
+  set status = 'approved',
+      reviewed_at = timezone('utc'::text, now()),
+      reviewed_by = auth.uid()
+  where id = p_deposit_id;
+
+  -- 2. Credit employer deposited balance
+  update public.profiles
+  set deposited = deposited + v_dep.amount,
+      updated_at = timezone('utc'::text, now())
+  where id = v_target_user_id;
   
+  -- 3. Record transaction
   insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values (
-    coalesce(v_dep.employer_id, v_dep.user_id), 'deposit', v_dep.amount, 'completed',
-    jsonb_build_object('deposit_request_id', p_deposit_id, 'method', coalesce(v_dep.method, v_dep.payment_method), 'trx_id', coalesce(v_dep.trx_id, v_dep.transaction_id)),
+    v_target_user_id, 'deposit', v_dep.amount, 'completed',
+    jsonb_build_object(
+      'deposit_request_id', p_deposit_id,
+      'method', coalesce(v_dep.method, v_dep.payment_method),
+      'trx_id', coalesce(v_dep.trx_id, v_dep.transaction_id)
+    ),
     timezone('utc'::text, now())
   );
 
+  -- 4. Notify employer
   insert into public.notifications (user_id, title, message, type, target_role, created_at)
-  values (coalesce(v_dep.employer_id, v_dep.user_id), 'Deposit Approved', 'Your deposit of $' || to_char(v_dep.amount, 'FM999,990.00') || ' has been approved.', 'reward', 'employer', timezone('utc'::text, now()));
+  values (
+    v_target_user_id,
+    'Deposit Approved! 💳',
+    format('Your deposit of $%s via %s has been approved.', to_char(v_dep.amount, 'FM999,990.00'), coalesce(v_dep.method, v_dep.payment_method, 'bKash')),
+    'reward',
+    'employer',
+    timezone('utc'::text, now())
+  );
 end; $$;
 
 create or replace function public.admin_reject_deposit(p_deposit_id uuid, p_reason text)
 returns void language plpgsql security definer set search_path = public
 as $$
-declare v_role text; v_dep public.deposit_requests%rowtype; v_reason text;
+declare
+  v_role text;
+  v_dep public.deposit_requests%rowtype;
+  v_reason text;
+  v_target_user_id uuid;
 begin
   select role into v_role from public.profiles where id = auth.uid();
-  if v_role is distinct from 'admin' then raise exception 'Only admins can reject deposits.'; end if;
+  if v_role is distinct from 'admin' then
+    raise exception 'Only admins can reject deposits.';
+  end if;
   select * into v_dep from public.deposit_requests where id = p_deposit_id for update;
-  if not found or v_dep.status <> 'pending' then raise exception 'Deposit request not found or already reviewed.'; end if;
+  if not found or v_dep.status <> 'pending' then
+    raise exception 'Deposit request not found or already reviewed.';
+  end if;
   v_reason := coalesce(nullif(btrim(p_reason), ''), 'Rejected by admin');
+  v_target_user_id := coalesce(v_dep.employer_id, v_dep.user_id);
 
-  update public.deposit_requests set status = 'rejected', rejection_reason = v_reason, reviewed_at = timezone('utc'::text, now()), reviewed_by = auth.uid() where id = p_deposit_id;
-  insert into public.notifications (user_id, title, message, type, target_role, created_at)
-  values (coalesce(v_dep.employer_id, v_dep.user_id), 'Deposit Rejected', v_reason, 'alert', 'employer', timezone('utc'::text, now()));
+  update public.deposit_requests
+  set status = 'rejected',
+      rejection_reason = v_reason,
+      reviewed_at = timezone('utc'::text, now()),
+      reviewed_by = auth.uid()
+  where id = p_deposit_id;
+
+  if v_target_user_id is not null then
+    insert into public.notifications (user_id, title, message, type, target_role, created_at)
+    values (v_target_user_id, 'Deposit Rejected', v_reason, 'alert', 'employer', timezone('utc'::text, now()));
+  end if;
 end; $$;
 
+-- I. Withdrawal Request & Admin Review RPCs
 create or replace function public.request_withdrawal(p_amount numeric, p_method text, p_account_details text)
 returns uuid language plpgsql security definer set search_path = public
 as $$
-declare v_role text; v_balance numeric(12,2); v_fee_rate numeric(5,2); v_fee numeric(12,2); v_net numeric(12,2); v_id uuid; v_setting text;
+declare
+  v_role text;
+  v_balance numeric(12,2);
+  v_fee_rate numeric(5,2);
+  v_fee numeric(12,2);
+  v_net numeric(12,2);
+  v_id uuid;
+  v_setting text;
 begin
   select role into v_role from public.profiles where id = auth.uid();
-  if v_role is distinct from 'worker' then raise exception 'Only workers can request withdrawals.'; end if;
-  if p_amount is null or p_amount < 2 then raise exception 'Minimum withdrawal amount is $2.00.'; end if;
-  if lower(trim(p_method)) not in ('bkash', 'nagad') then raise exception 'Withdrawal method must be bKash or Nagad.'; end if;
-  if btrim(coalesce(p_account_details, '')) = '' then raise exception 'Account details are required.'; end if;
+  if v_role is distinct from 'worker' then
+    raise exception 'Only workers can request withdrawals.';
+  end if;
+  if p_amount is null or p_amount < 2 then
+    raise exception 'Minimum withdrawal amount is $2.00.';
+  end if;
+  if lower(trim(p_method)) not in ('bkash', 'nagad') then
+    raise exception 'Withdrawal method must be bKash or Nagad.';
+  end if;
+  if btrim(coalesce(p_account_details, '')) = '' then
+    raise exception 'Account details are required.';
+  end if;
 
   select earnings into v_balance from public.profiles where id = auth.uid() for update;
-  if coalesce(v_balance, 0) < p_amount then raise exception 'You cannot withdraw more than your available earnings.'; end if;
+  if coalesce(v_balance, 0) < p_amount then
+    raise exception 'You cannot withdraw more than your available earnings ($% available).', to_char(coalesce(v_balance, 0), 'FM999,990.00');
+  end if;
 
   select value into v_setting from public.system_settings where key = 'withdrawal_fee_rate';
   v_fee_rate := greatest(0, least(coalesce(nullif(v_setting, '')::numeric, 2.00), 100));
   v_fee := round((p_amount * v_fee_rate / 100.00)::numeric, 2);
   v_net := p_amount - v_fee;
 
-  update public.profiles set earnings = earnings - p_amount, spent = spent + p_amount, updated_at = timezone('utc'::text, now()) where id = auth.uid();
+  -- Deduct earnings and add to spent
+  update public.profiles
+  set earnings = earnings - p_amount,
+      spent = spent + p_amount,
+      updated_at = timezone('utc'::text, now())
+  where id = auth.uid();
   
-  insert into public.withdrawals (worker_id, amount, fee_amount, net_amount, method, account_number, account_details, status, created_at, updated_at)
-  values (auth.uid(), p_amount, v_fee, v_net, lower(trim(p_method)), btrim(p_account_details), btrim(p_account_details), 'pending', timezone('utc'::text, now()), timezone('utc'::text, now()))
+  insert into public.withdrawals (
+    worker_id, amount, fee_amount, net_amount, method, account_number, account_details, status, created_at, updated_at
+  )
+  values (
+    auth.uid(), p_amount, v_fee, v_net, lower(trim(p_method)), btrim(p_account_details), btrim(p_account_details), 'pending', timezone('utc'::text, now()), timezone('utc'::text, now())
+  )
   returning id into v_id;
 
   insert into public.transactions (user_id, type, amount, status, meta, created_at)
@@ -946,12 +1116,20 @@ end; $$;
 create or replace function public.admin_approve_withdrawal(p_withdrawal_id uuid)
 returns void language plpgsql security definer set search_path = public
 as $$
-declare v_role text; v_w public.withdrawals%rowtype; v_rate numeric; v_setting text;
+declare
+  v_role text;
+  v_w public.withdrawals%rowtype;
+  v_rate numeric;
+  v_setting text;
 begin
   select role into v_role from public.profiles where id = auth.uid();
-  if v_role is distinct from 'admin' then raise exception 'Only admins can approve withdrawals.'; end if;
+  if v_role is distinct from 'admin' then
+    raise exception 'Only admins can approve withdrawals.';
+  end if;
   select * into v_w from public.withdrawals where id = p_withdrawal_id for update;
-  if not found or v_w.status <> 'pending' then raise exception 'Withdrawal not found or already processed.'; end if;
+  if not found or v_w.status <> 'pending' then
+    raise exception 'Withdrawal not found or already processed.';
+  end if;
 
   update public.withdrawals set status = 'completed', updated_at = timezone('utc'::text, now()) where id = p_withdrawal_id;
   select value into v_setting from public.system_settings where key = 'withdrawal_fee_rate';
@@ -970,12 +1148,19 @@ end; $$;
 create or replace function public.admin_reject_withdrawal(p_withdrawal_id uuid, p_reason text)
 returns void language plpgsql security definer set search_path = public
 as $$
-declare v_role text; v_w public.withdrawals%rowtype; v_reason text;
+declare
+  v_role text;
+  v_w public.withdrawals%rowtype;
+  v_reason text;
 begin
   select role into v_role from public.profiles where id = auth.uid();
-  if v_role is distinct from 'admin' then raise exception 'Only admins can reject withdrawals.'; end if;
+  if v_role is distinct from 'admin' then
+    raise exception 'Only admins can reject withdrawals.';
+  end if;
   select * into v_w from public.withdrawals where id = p_withdrawal_id for update;
-  if not found or v_w.status <> 'pending' then raise exception 'Withdrawal not found or already processed.'; end if;
+  if not found or v_w.status <> 'pending' then
+    raise exception 'Withdrawal not found or already processed.';
+  end if;
   v_reason := coalesce(nullif(btrim(p_reason), ''), 'Rejected by admin');
 
   update public.withdrawals set status = 'rejected', rejection_reason = v_reason, updated_at = timezone('utc'::text, now()) where id = p_withdrawal_id;
@@ -988,11 +1173,12 @@ begin
   values (v_w.worker_id, 'Withdrawal Rejected', v_reason, 'alert', 'worker', timezone('utc'::text, now()));
 end; $$;
 
--- I. Notifications & System Settings RPCs
+-- J. Notifications & System Settings RPCs
 create or replace function public.admin_send_notification(p_title text, p_message text, p_type text default 'announcement', p_target_role text default 'all', p_user_id uuid default null)
 returns uuid language plpgsql security definer set search_path = public
 as $$
-declare v_id uuid;
+declare
+  v_id uuid;
 begin
   if not exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') then
     raise exception 'Only administrators can send notifications.';
@@ -1029,7 +1215,8 @@ end; $$;
 create or replace function public.mark_all_notifications_as_read()
 returns void language plpgsql security definer set search_path = public
 as $$
-declare v_role text;
+declare
+  v_role text;
 begin
   select role into v_role from public.profiles where id = auth.uid();
   insert into public.notification_reads (notification_id, user_id, read_at)
@@ -1082,34 +1269,34 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 
--- Profiles
+-- Profiles: Authenticated users can read profiles (needed for names/roles across task listings & reviews)
 drop policy if exists "profiles_select_secure" on public.profiles;
 drop policy if exists "profiles_select_policy" on public.profiles;
-create policy "profiles_select_secure" on public.profiles for select to authenticated
-using (
-  id = auth.uid()
-  or referred_by = auth.uid()
-  or public.is_admin()
-  or exists (select 1 from public.submissions s where s.employer_id = auth.uid() and s.worker_id = profiles.id)
-);
+drop policy if exists "profiles_select_all" on public.profiles;
+create policy "profiles_select_all" on public.profiles for select to authenticated using (true);
 
 drop policy if exists "profiles_insert_policy" on public.profiles;
 create policy "profiles_insert_policy" on public.profiles for insert to authenticated with check (auth.uid() = id);
 
 drop policy if exists "profiles_update_policy" on public.profiles;
-create policy "profiles_update_policy" on public.profiles for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+create policy "profiles_update_policy" on public.profiles for update to authenticated using (auth.uid() = id or public.is_admin()) with check (auth.uid() = id or public.is_admin());
 
--- Tasks
+-- Tasks: Marketplace and Dashboards can select tasks without RLS locks
 drop policy if exists "tasks_select_secure" on public.tasks;
 drop policy if exists "tasks_select_policy" on public.tasks;
-create policy "tasks_select_secure" on public.tasks for select to authenticated, anon
-using (status in ('open', 'active') or employer_id = auth.uid() or public.is_admin());
+drop policy if exists "tasks_select_all" on public.tasks;
+create policy "tasks_select_all" on public.tasks for select to authenticated, anon using (true);
 
 drop policy if exists "tasks_insert_policy" on public.tasks;
-create policy "tasks_insert_policy" on public.tasks for insert to authenticated with check (employer_id = auth.uid());
+create policy "tasks_insert_policy" on public.tasks for insert to authenticated with check (employer_id = auth.uid() or public.is_admin());
 
 drop policy if exists "tasks_update_policy" on public.tasks;
 create policy "tasks_update_policy" on public.tasks for update to authenticated using (
+  employer_id = auth.uid() or public.is_admin()
+);
+
+drop policy if exists "tasks_delete_policy" on public.tasks;
+create policy "tasks_delete_policy" on public.tasks for delete to authenticated using (
   employer_id = auth.uid() or public.is_admin()
 );
 
@@ -1121,6 +1308,11 @@ using (worker_id = auth.uid() or employer_id = auth.uid() or public.is_admin());
 
 drop policy if exists "submissions_insert_policy" on public.submissions;
 create policy "submissions_insert_policy" on public.submissions for insert to authenticated with check (worker_id = auth.uid());
+
+drop policy if exists "submissions_update_policy" on public.submissions;
+create policy "submissions_update_policy" on public.submissions for update to authenticated using (
+  employer_id = auth.uid() or worker_id = auth.uid() or public.is_admin()
+);
 
 -- Referral Commissions
 drop policy if exists "referral_commissions_select_secure" on public.referral_commissions;
@@ -1151,7 +1343,7 @@ using (employer_id = auth.uid() or user_id = auth.uid() or public.is_admin());
 
 drop policy if exists "deposits_insert_policy" on public.deposit_requests;
 create policy "deposits_insert_policy" on public.deposit_requests for insert to authenticated with check (
-  employer_id = auth.uid() or user_id = auth.uid()
+  employer_id = auth.uid() or user_id = auth.uid() or public.is_admin()
 );
 
 -- Notifications
@@ -1160,7 +1352,7 @@ drop policy if exists "notifications_select_policy" on public.notifications;
 create policy "notifications_select_secure" on public.notifications for select to authenticated
 using (
   user_id = auth.uid()
-  or (user_id is null and (target_role = 'all' or target_role = (select p.role from public.profiles p where p.id = auth.uid())))
+  or user_id is null
   or public.is_admin()
 );
 
@@ -1188,7 +1380,20 @@ drop policy if exists "withdrawal_fee_earnings_select_admin" on public.withdrawa
 create policy "withdrawal_fee_earnings_select_admin" on public.withdrawal_fee_earnings for select to authenticated using (public.is_admin());
 
 -- ----------------------------------------------------------------------------
--- 7. GRANTS & REALTIME PUBLICATION
+-- 7. STORAGE BUCKET FOR TASK PROOFS
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('task-proofs', 'task-proofs', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "task_proofs_public_select" on storage.objects;
+create policy "task_proofs_public_select" on storage.objects for select to public using (bucket_id = 'task-proofs');
+
+drop policy if exists "task_proofs_auth_insert" on storage.objects;
+create policy "task_proofs_auth_insert" on storage.objects for insert to authenticated with check (bucket_id = 'task-proofs');
+
+-- ----------------------------------------------------------------------------
+-- 8. GRANTS & REALTIME PUBLICATION
 -- ----------------------------------------------------------------------------
 grant usage on schema public to authenticated, anon;
 grant select on all tables in schema public to authenticated;
@@ -1219,4 +1424,7 @@ begin
   begin alter publication supabase_realtime add table public.referral_commissions; exception when duplicate_object then null; when undefined_object then null; end;
   begin alter publication supabase_realtime add table public.profiles; exception when duplicate_object then null; when undefined_object then null; end;
   begin alter publication supabase_realtime add table public.submissions; exception when duplicate_object then null; when undefined_object then null; end;
+  begin alter publication supabase_realtime add table public.tasks; exception when duplicate_object then null; when undefined_object then null; end;
+  begin alter publication supabase_realtime add table public.deposit_requests; exception when duplicate_object then null; when undefined_object then null; end;
+  begin alter publication supabase_realtime add table public.withdrawals; exception when duplicate_object then null; when undefined_object then null; end;
 end $$;
