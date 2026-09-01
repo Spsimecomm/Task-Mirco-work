@@ -5,11 +5,22 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
+// Helper: Generate dynamic unique referral code (e.g., TANV5081, SHIM4920)
+export function generateReferralCode(fullName) {
+  const cleanName = (fullName || 'WORK')
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 4)
+    .toUpperCase()
+    .padEnd(4, 'X')
+  const randomNum = Math.floor(1000 + Math.random() * 9000)
+  return `${cleanName}${randomNum}`
+}
+
 // ============================================================================
 // In-Memory Mock Database & Service (Used when Supabase credentials are unset)
 // ============================================================================
 
-const STORAGE_KEY = 'taskly_mock_db_v2'
+const STORAGE_KEY = 'taskly_mock_db_v3'
 
 const initialMockData = {
   profiles: [
@@ -18,15 +29,30 @@ const initialMockData = {
       email: 'worker@taskly.demo',
       full_name: 'Tanvir Ahmed',
       role: 'worker',
+      referral_code: 'TANV5081',
+      referred_by: null,
       earnings: 24.50,
       deposited: 0.00,
       created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+    },
+    {
+      id: 'usr-worker-2',
+      email: 'shakil.worker@taskly.demo',
+      full_name: 'Shakil Mia',
+      role: 'worker',
+      referral_code: 'SHAK2049',
+      referred_by: 'usr-worker-1',
+      earnings: 14.20,
+      deposited: 0.00,
+      created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
     },
     {
       id: 'usr-employer-1',
       email: 'employer@taskly.demo',
       full_name: 'Shakil Enterprise',
       role: 'employer',
+      referral_code: null,
+      referred_by: null,
       earnings: 0.00,
       deposited: 150.00,
       created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
@@ -36,6 +62,8 @@ const initialMockData = {
       email: 'admin@taskly.demo',
       full_name: 'Taskly Admin',
       role: 'admin',
+      referral_code: null,
+      referred_by: null,
       earnings: 0.00,
       deposited: 0.00,
       created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
@@ -219,11 +247,14 @@ const initialMockData = {
     {
       id: 'rc-1',
       referrer_id: 'usr-worker-1',
-      referred_id: 'usr-employer-1',
+      referred_id: 'usr-worker-2',
       amount: 0.25,
+      commission_amount: 0.25,
       rate: 5.0,
-      source_type: 'task_earning',
-      source_id: 'task-1',
+      commission_rate: 5.0,
+      source_type: 'task_approval',
+      source_id: 'sub-2',
+      status: 'completed',
       created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
     },
   ],
@@ -234,9 +265,23 @@ function getStoredMockDb() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
+      // Normalize profiles: ensure worker has referral code, others have null
+      const normalizedProfiles = (parsed.profiles || initialMockData.profiles).map((p) => {
+        if (p.role === 'worker') {
+          if (!p.referral_code || p.referral_code === 'TASKLY') {
+            p.referral_code = generateReferralCode(p.full_name)
+          }
+        } else {
+          p.referral_code = null
+          p.referred_by = null
+        }
+        return p
+      })
+
       return {
         ...initialMockData,
         ...parsed,
+        profiles: normalizedProfiles,
         notifications: parsed.notifications || initialMockData.notifications,
         notification_reads: parsed.notification_reads || initialMockData.notification_reads,
         system_settings: parsed.system_settings || initialMockData.system_settings,
@@ -299,13 +344,41 @@ function createMockClient() {
         const db = getStoredMockDb()
         let user = db.profiles.find((p) => p.email.toLowerCase() === email.toLowerCase())
         if (!user) {
+          const userRole = options.data?.role || 'worker'
+          const fullName = options.data?.full_name || email.split('@')[0]
+          
+          let myReferralCode = null
+          let referredById = null
+
+          // Strict Worker-Only Referral Logic
+          if (userRole === 'worker') {
+            myReferralCode = generateReferralCode(fullName)
+            const inputRefCode = (
+              options.data?.referral_code ||
+              options.data?.ref ||
+              options.data?.referred_by ||
+              ''
+            ).trim().toUpperCase()
+
+            if (inputRefCode) {
+              const referrer = db.profiles.find(
+                (p) => p.referral_code?.toUpperCase() === inputRefCode && p.role === 'worker'
+              )
+              if (referrer) {
+                referredById = referrer.id
+              }
+            }
+          }
+
           user = {
             id: 'usr-' + Math.random().toString(36).slice(2, 10),
             email,
-            full_name: options.data?.full_name || email.split('@')[0],
-            role: options.data?.role || 'worker',
-            earnings: options.data?.role === 'worker' ? 10.00 : 0.00,
-            deposited: options.data?.role === 'employer' ? 50.00 : 0.00,
+            full_name: fullName,
+            role: userRole,
+            referral_code: myReferralCode,
+            referred_by: referredById,
+            earnings: userRole === 'worker' ? 10.00 : 0.00,
+            deposited: userRole === 'employer' ? 50.00 : 0.00,
             created_at: new Date().toISOString(),
           }
           db.profiles.push(user)
@@ -330,11 +403,14 @@ function createMockClient() {
         if (!user) {
           // If demo quick login or new user, auto-create a user profile
           const defaultRole = email.includes('admin') ? 'admin' : email.includes('employer') ? 'employer' : 'worker'
+          const fullName = email.split('@')[0]
           user = {
             id: 'usr-' + Math.random().toString(36).slice(2, 10),
             email,
-            full_name: email.split('@')[0],
+            full_name: fullName,
             role: defaultRole,
+            referral_code: defaultRole === 'worker' ? generateReferralCode(fullName) : null,
+            referred_by: null,
             earnings: defaultRole === 'worker' ? 15.00 : 0.00,
             deposited: defaultRole === 'employer' ? 100.00 : 0.00,
             created_at: new Date().toISOString(),
@@ -459,6 +535,21 @@ function createMockClient() {
           result = result.map((sub) => {
             const task = db.tasks?.find((t) => t.id === sub.task_id) || null
             return { ...sub, tasks: task }
+          })
+        }
+
+        // Hydrate relations on referral_commissions
+        if (table === 'referral_commissions') {
+          result = result.map((rc) => {
+            const referredProfile = db.profiles?.find((p) => p.id === (rc.referred_id || rc.user_id)) || null
+            return {
+              ...rc,
+              commission_amount: rc.commission_amount || rc.amount || 0,
+              commission_rate: rc.commission_rate || rc.rate || 5.0,
+              referred: referredProfile
+                ? { id: referredProfile.id, full_name: referredProfile.full_name, role: referredProfile.role }
+                : null,
+            }
           })
         }
 
@@ -795,7 +886,35 @@ function createMockClient() {
           const task = db.tasks.find((t) => t.id === sub.task_id)
           const worker = db.profiles.find((p) => p.id === sub.worker_id)
           if (worker && task) {
-            worker.earnings = (Number(worker.earnings) || 0) + Number(task.reward)
+            const rewardAmt = Number(task.reward) || 0
+            worker.earnings = (Number(worker.earnings) || 0) + rewardAmt
+
+            // Process referral commission if worker was referred by another worker
+            if (worker.referred_by) {
+              const referrer = db.profiles.find(
+                (p) => p.id === worker.referred_by && p.role === 'worker'
+              )
+              if (referrer) {
+                const commissionRate = 5.0
+                const commissionAmt = Math.round(rewardAmt * (commissionRate / 100.0) * 100) / 100
+                if (commissionAmt > 0) {
+                  referrer.earnings = (Number(referrer.earnings) || 0) + commissionAmt
+                  db.referral_commissions = db.referral_commissions || []
+                  db.referral_commissions.unshift({
+                    id: 'rc-' + Math.random().toString(36).slice(2, 9),
+                    referrer_id: referrer.id,
+                    referred_id: worker.id,
+                    eligible_amount: rewardAmt,
+                    commission_rate: commissionRate,
+                    commission_amount: commissionAmt,
+                    source_type: 'task_approval',
+                    source_id: sub.id,
+                    status: 'completed',
+                    created_at: new Date().toISOString(),
+                  })
+                }
+              }
+            }
           }
         }
         saveMockDb(db)

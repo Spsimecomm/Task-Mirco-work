@@ -23,6 +23,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import StatCard from '../components/StatCard'
 import { EmptyState, StatusBadge } from '../components/Shared'
+import { Link } from 'react-router-dom'
 
 export default function Referrals() {
   const { user, profile } = useAuth()
@@ -35,11 +36,18 @@ export default function Referrals() {
   const [activeTab, setActiveTab] = useState('commissions') // 'commissions' | 'members'
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Derive domain and referral link
+  // Derive domain and dynamic unique referral code (NO hardcoded TASKLY fallback)
   const appDomain =
     import.meta.env.VITE_APP_URL ||
     (typeof window !== 'undefined' ? window.location.origin : 'https://taskly.app')
-  const referralCode = profile?.referral_code || 'TASKLY'
+  
+  const fallbackCode = (profile?.full_name || user?.email?.split('@')[0] || 'WORK')
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 4)
+    .toUpperCase()
+    .padEnd(4, 'X') + (user?.id ? user.id.replace(/[^0-9]/g, '').slice(0, 4) || '8021' : '8021')
+
+  const referralCode = profile?.referral_code || fallbackCode
   const referralLink = `${appDomain}/register?ref=${referralCode}`
 
   // Copy helpers
@@ -175,6 +183,29 @@ export default function Referrals() {
   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`
   const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Join Taskly to earn money completing micro-tasks!')}`
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`
+
+  // Role constraint: If accessed by an employer or admin, show role constraint banner
+  if (profile?.role && profile.role !== 'worker') {
+    return (
+      <div className="max-w-2xl mx-auto my-12 p-8 rounded-3xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] text-center shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4">
+          <Gift size={28} />
+        </div>
+        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-[#0F172A] dark:text-[#F1F5F9] mb-2">
+          Worker-Exclusive Referral Program
+        </h2>
+        <p className="text-xs sm:text-sm text-[#475569] dark:text-slate-400 max-w-md mx-auto mb-6">
+          The Taskly Referral & Commission Program is exclusively designed for <strong>Worker accounts</strong>. Your account is registered as an <strong>{profile.role}</strong>.
+        </p>
+        <Link
+          to={profile.role === 'admin' ? '/admin' : '/employer'}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-primary/20 hover:bg-emerald-600 transition"
+        >
+          Return to Dashboard
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">

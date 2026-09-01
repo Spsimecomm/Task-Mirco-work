@@ -98,12 +98,23 @@ alter table public.submissions  enable row level security;
 alter table public.transactions enable row level security;
 alter table public.withdrawals  enable row level security;
 
--- profiles: a user can only ever read their own wallet/profile row.
--- No UPDATE/INSERT policy is granted — all writes happen via SECURITY
--- DEFINER functions below.
-create policy "profiles_select_own"
+-- profiles: RLS policy allowing reading own profile, referred team members, task submission workers for employers, and admin access.
+drop policy if exists "profiles_select_own" on public.profiles;
+create policy "profiles_select_policy"
   on public.profiles for select
-  using (auth.uid() = id);
+  to authenticated
+  using (
+    auth.uid() = id
+    or referred_by = auth.uid()
+    or exists (
+      select 1 from public.submissions s
+      where s.employer_id = auth.uid() and s.worker_id = profiles.id
+    )
+    or exists (
+      select 1 from public.profiles admin_p
+      where admin_p.id = auth.uid() and admin_p.role = 'admin'
+    )
+  );
 
 -- tasks: everyone can browse open tasks; employers can also see their own
 -- tasks regardless of status. Inserts only happen via create_task_with_funding.
@@ -128,6 +139,42 @@ create policy "withdrawals_select_own"
   using (worker_id = auth.uid());
 
 -- ----------------------------------------------------------------------------
+-- REFERRAL CODE GENERATOR FUNCTION
+-- ----------------------------------------------------------------------------
+
+create or replace function public.generate_unique_referral_code(p_full_name text default null)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_prefix text;
+  v_code text;
+  v_exists boolean;
+  v_attempts int := 0;
+begin
+  v_prefix := upper(substring(regexp_replace(coalesce(p_full_name, ''), '[^a-zA-Z]', '', 'g') from 1 for 4));
+  if length(v_prefix) < 3 then
+    v_prefix := 'WORK';
+  end if;
+
+  loop
+    v_code := v_prefix || lpad((floor(random() * 9000 + 1000))::text, 4, '0');
+    select exists(select 1 from public.profiles where upper(referral_code) = v_code) into v_exists;
+    if not v_exists then
+      return v_code;
+    end if;
+    v_attempts := v_attempts + 1;
+    if v_attempts > 30 then
+      v_code := 'WRK' || upper(substring(md5(random()::text || clock_timestamp()::text) from 1 for 5));
+      return v_code;
+    end if;
+  end loop;
+end;
+$$;
+
+-- ----------------------------------------------------------------------------
 -- NEW USER TRIGGER — creates a profile row when someone signs up
 -- ----------------------------------------------------------------------------
 
@@ -137,12 +184,51 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_role text;
+  v_full_name text;
+  v_ref_code text;
+  v_referrer_id uuid := null;
+  v_my_ref_code text := null;
 begin
-  insert into public.profiles (id, full_name, role)
+  v_role := coalesce(new.raw_user_meta_data->>'role', 'worker');
+  v_full_name := coalesce(new.raw_user_meta_data->>'full_name', 'New user');
+
+  if v_role not in ('worker', 'employer', 'admin') then
+    v_role := 'worker';
+  end if;
+
+  -- Worker-only referral handling
+  if v_role = 'worker' then
+    v_ref_code := upper(btrim(coalesce(
+      new.raw_user_meta_data->>'referral_code',
+      new.raw_user_meta_data->>'ref',
+      new.raw_user_meta_data->>'referred_by',
+      ''
+    )));
+
+    if v_ref_code <> '' then
+      select id into v_referrer_id
+      from public.profiles
+      where upper(referral_code) = v_ref_code
+        and role = 'worker'
+        and id <> new.id
+      limit 1;
+    end if;
+
+    v_my_ref_code := public.generate_unique_referral_code(v_full_name);
+  else
+    v_my_ref_code := null;
+    v_referrer_id := null;
+  end if;
+
+  insert into public.profiles (id, full_name, role, referral_code, referred_by)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', 'New user'),
-    coalesce(new.raw_user_meta_data->>'role', 'worker')
+    v_full_name,
+    v_role,
+    v_my_ref_code,
+    v_referrer_id
   );
   return new;
 end;

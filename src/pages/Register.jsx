@@ -55,7 +55,7 @@ export default function Register() {
         email: form.email,
         password: form.password,
         role: form.role,
-        referralCode: form.referralCode,
+        referralCode: form.role === 'worker' ? form.referralCode : undefined,
       })
       // Clear saved referral code on success
       try {
@@ -205,42 +205,44 @@ export default function Register() {
               />
             </div>
 
-            {/* Referral Code (Optional / Auto-filled) */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                  <Gift size={13} className="text-emerald-600 dark:text-brand-primary" />
-                  <span>Referral Code (Optional)</span>
-                </label>
-                {!showReferralInput && !form.referralCode && (
-                  <button
-                    type="button"
-                    onClick={() => setShowReferralInput(true)}
-                    className="text-[11px] font-semibold text-emerald-600 dark:text-brand-primary hover:underline"
-                  >
-                    Have a code?
-                  </button>
-                )}
-              </div>
-
-              {(showReferralInput || form.referralCode) && (
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm uppercase tracking-wider text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-                    value={form.referralCode}
-                    onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase().replace(/\s/g, '') })}
-                    placeholder="e.g. TASK1002"
-                  />
-                  {form.referralCode && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-brand-primary bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                      <CheckCircle2 size={12} />
-                      <span>Applied</span>
-                    </div>
+            {/* Referral Code (Worker Only / Optional / Auto-filled) */}
+            {form.role === 'worker' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Gift size={13} className="text-emerald-600 dark:text-brand-primary" />
+                    <span>Referral Code (Optional)</span>
+                  </label>
+                  {!showReferralInput && !form.referralCode && (
+                    <button
+                      type="button"
+                      onClick={() => setShowReferralInput(true)}
+                      className="text-[11px] font-semibold text-emerald-600 dark:text-brand-primary hover:underline"
+                    >
+                      Have a code?
+                    </button>
                   )}
                 </div>
-              )}
-            </div>
+
+                {(showReferralInput || form.referralCode) && (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm uppercase tracking-wider text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                      value={form.referralCode}
+                      onChange={(e) => setForm({ ...form, referralCode: e.target.value.toUpperCase().replace(/\s/g, '') })}
+                      placeholder="e.g. TANV5081"
+                    />
+                    {form.referralCode && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-brand-primary bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                        <CheckCircle2 size={12} />
+                        <span>Applied</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <ErrorBanner message={error} />
 

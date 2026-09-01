@@ -28,7 +28,7 @@ export default function Sidebar({ isOpen, onClose }) {
     navigate('/login')
   }
 
-  // Define nav links strictly based on user role
+  // Define nav links strictly based on user role (Referrals are Worker-Only)
   const workerNav = [
     { to: '/worker', label: 'Overview', icon: LayoutDashboard },
     { to: '/marketplace', label: 'Marketplace', icon: Store },
@@ -42,12 +42,10 @@ export default function Sidebar({ isOpen, onClose }) {
     { to: '/create-task', label: 'Post a Task', icon: PlusCircle },
     { to: '/review-submissions', label: 'Review Submissions', icon: Briefcase },
     { to: '/deposit', label: 'Deposit Funds', icon: CreditCard },
-    { to: '/referrals', label: 'Refer & Earn', icon: Gift },
   ]
 
   const adminNav = [
     { to: '/admin', label: 'Admin Console', icon: ShieldCheck },
-    { to: '/referrals', label: 'Referral Engine', icon: Gift },
   ]
 
   const mainLinks = role === 'admin' ? adminNav : role === 'employer' ? employerNav : workerNav

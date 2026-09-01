@@ -225,14 +225,14 @@ export default function App() {
           }
         />
 
-        {/* Refer & Earn Routes (All Authenticated Roles) */}
+        {/* Refer & Earn Routes (Worker Only) */}
         <Route
           path="/referrals"
           element={
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['worker', 'employer', 'admin']}
+              allowedRoles={['worker']}
               isLoading={loading}
             >
               <Referrals />
@@ -245,7 +245,7 @@ export default function App() {
             <ProtectedRoute
               isAuth={!!session}
               userRole={role}
-              allowedRoles={['worker', 'employer', 'admin']}
+              allowedRoles={['worker']}
               isLoading={loading}
             >
               <Referrals />

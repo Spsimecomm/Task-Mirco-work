@@ -29,12 +29,10 @@ export default function Navbar() {
     { to: '/create-task', label: 'Post a task', icon: PlusCircle },
     { to: '/review-submissions', label: 'Review submissions', icon: Briefcase },
     { to: '/deposit', label: 'Deposit', icon: ArrowDownToLine },
-    { to: '/referrals', label: 'Refer & Earn', icon: Gift },
   ]
 
   const adminLinks = [
     { to: '/admin', label: 'Admin dashboard', icon: LayoutGrid },
-    { to: '/referrals', label: 'Referral System', icon: Gift },
   ]
 
   const publicLinks = [
