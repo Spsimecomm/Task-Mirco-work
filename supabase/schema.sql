@@ -1,11 +1,14 @@
 -- ============================================================================
--- TASKLY FULL DATABASE SCHEMA & MIGRATION SCRIPT
+-- TASKLY FULL DATABASE SCHEMA & MIGRATION SCRIPT (CLEAN & ROLE-SAFE)
 -- ============================================================================
--- Fixes:
--- 1. Tasks status check constraint violations ("tasks_status_check") on approval/completion
--- 2. Worker 5% referral commission auto-calculation & referral_commissions ledger logging
--- 3. Non-recursive, ultra-fast RLS policies avoiding recursion loops
--- 4. Bulletproof user signup trigger with role extraction & referrer linking
+-- Highlights:
+-- 1. 100% Role-Safe: Preserves exact user role ('worker', 'employer', 'admin') from signup.
+--    No code here will ever force, overwrite, or default existing user roles.
+-- 2. Tasks Status Fix: Replaces restrictive constraints so employers can approve submissions
+--    and complete tasks without "tasks_status_check" violation errors.
+-- 3. Automatic 5% Referral Commission: Accurately calculates 5% commission on task approvals,
+--    credits the referrer's earnings, and logs the entry in `referral_commissions`.
+-- 4. Clean, Non-Recursive RLS: Prevents recursion loops and allows fast query resolution.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -15,10 +18,10 @@ create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
 -- ----------------------------------------------------------------------------
--- 2. TABLES DEFINITIONS
+-- 2. TABLE DEFINITIONS (Idempotent)
 -- ----------------------------------------------------------------------------
 
--- A. Profiles (User accounts, balances, roles, referral links)
+-- A. Profiles
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null default 'New User',
@@ -196,7 +199,7 @@ values
 on conflict (key) do nothing;
 
 -- ----------------------------------------------------------------------------
--- 3. ENSURE COLUMNS EXIST (Idempotent Schema Alignments)
+-- 3. ENSURE COLUMNS EXIST (Non-Destructive)
 -- ----------------------------------------------------------------------------
 alter table public.profiles add column if not exists full_name text default 'New User';
 alter table public.profiles add column if not exists role text default 'worker';
@@ -238,15 +241,14 @@ alter table public.withdrawals add column if not exists account_number text;
 alter table public.withdrawals add column if not exists account_details text;
 
 -- ----------------------------------------------------------------------------
--- 4. CLEAN & RE-ESTABLISH SAFE CHECK CONSTRAINTS
+-- 4. SAFELY FIX CHECK CONSTRAINTS
 -- ----------------------------------------------------------------------------
--- This dynamically removes all conflicting, restrictive, or outdated check
--- constraints on `tasks`, `submissions`, `profiles`, `transactions`, etc.
+-- Drops restrictive check constraints and adds clean, permissive ones
 do $$
 declare
   r record;
 begin
-  -- Drop all check constraints on tasks
+  -- Drop check constraints on tasks
   for r in (
     select conname
     from pg_constraint
@@ -256,7 +258,7 @@ begin
     execute 'alter table public.tasks drop constraint if exists ' || quote_ident(r.conname);
   end loop;
 
-  -- Drop all check constraints on submissions
+  -- Drop check constraints on submissions
   for r in (
     select conname
     from pg_constraint
@@ -266,7 +268,7 @@ begin
     execute 'alter table public.submissions drop constraint if exists ' || quote_ident(r.conname);
   end loop;
 
-  -- Drop all check constraints on referral_commissions
+  -- Drop check constraints on referral_commissions
   for r in (
     select conname
     from pg_constraint
@@ -276,7 +278,7 @@ begin
     execute 'alter table public.referral_commissions drop constraint if exists ' || quote_ident(r.conname);
   end loop;
 
-  -- Drop all check constraints on transactions
+  -- Drop check constraints on transactions
   for r in (
     select conname
     from pg_constraint
@@ -286,7 +288,7 @@ begin
     execute 'alter table public.transactions drop constraint if exists ' || quote_ident(r.conname);
   end loop;
 
-  -- Drop all check constraints on profiles
+  -- Drop check constraints on profiles
   for r in (
     select conname
     from pg_constraint
@@ -305,7 +307,7 @@ alter table public.profiles
   add constraint profiles_spent_check check (spent >= 0),
   add constraint profiles_deposited_check check (deposited >= 0);
 
--- Tasks check constraints: Allow all legitimate operational statuses
+-- Tasks check constraints: Permits all operational statuses without conflict
 alter table public.tasks
   add constraint tasks_status_check check (status in ('open', 'completed', 'cancelled', 'closed', 'active', 'paused', 'in_progress', 'draft', 'pending')),
   add constraint tasks_reward_check check (reward >= 0),
@@ -328,14 +330,11 @@ alter table public.transactions
   add constraint transactions_amount_check check (amount >= 0),
   add constraint transactions_status_check check (status in ('pending', 'completed', 'rejected', 'failed', 'approved'));
 
--- Drop old trigger before redefining function
-drop trigger if exists on_auth_user_created on auth.users;
-
 -- ----------------------------------------------------------------------------
 -- 5. BUSINESS LOGIC & RPC FUNCTIONS
 -- ----------------------------------------------------------------------------
 
--- A. Dynamic Unique Referral Code Generator (e.g. TANV5081, SHIM4920)
+-- A. Unique Referral Code Generator for Workers
 create or replace function public.generate_unique_referral_code(p_full_name text default null)
 returns text
 language plpgsql
@@ -368,7 +367,7 @@ begin
 end;
 $$;
 
--- B. User Signup Trigger (Bulletproof Role Extraction & Referrer Linking)
+-- B. User Signup Trigger (Role-Preserving & Metadata Safe)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -382,7 +381,7 @@ declare
   v_referrer_id uuid := null;
   v_my_ref_code text := null;
 begin
-  -- 1. Extract Role accurately from all possible metadata paths
+  -- 1. Extract Role directly from metadata (strictly respects user selection: worker / employer / admin)
   v_role := coalesce(
     new.raw_user_meta_data->>'role',
     new.raw_app_meta_data->>'role',
@@ -405,7 +404,7 @@ begin
     v_full_name := 'New User';
   end if;
 
-  -- 3. Process Worker-Only Referral Code & Referrer Lookup
+  -- 3. If worker, handle referral code generation & referrer lookup
   if v_role = 'worker' then
     v_ref_code := upper(btrim(coalesce(
       new.raw_user_meta_data->>'referral_code',
@@ -436,7 +435,7 @@ begin
     v_referrer_id := null;
   end if;
 
-  -- 4. Upsert profile safely without ever failing user registration
+  -- 4. Upsert profile safely without ever failing user registration or overwriting existing profile data
   begin
     insert into public.profiles (
       id,
@@ -466,7 +465,7 @@ begin
     )
     on conflict (id) do update set
       full_name = excluded.full_name,
-      role = excluded.role,
+      role = coalesce(public.profiles.role, excluded.role),
       referral_code = coalesce(public.profiles.referral_code, excluded.referral_code),
       referred_by = coalesce(public.profiles.referred_by, excluded.referred_by),
       updated_at = timezone('utc'::text, now());
@@ -475,7 +474,7 @@ begin
     values (new.id, v_full_name, v_role)
     on conflict (id) do update set
       full_name = excluded.full_name,
-      role = excluded.role;
+      role = coalesce(public.profiles.role, excluded.role);
   end;
 
   return new;
@@ -484,11 +483,13 @@ exception when others then
 end;
 $$;
 
+-- Drop old trigger and recreate cleanly
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- C. Robust 5% Worker Referral Commission Engine
+-- C. 5% Worker Referral Commission Engine
 create or replace function public.process_referral_commission(
   p_worker_id uuid,
   p_source_type text,
@@ -513,7 +514,7 @@ begin
     return 0.00;
   end if;
 
-  -- 1. Find worker and their referrer
+  -- 1. Find worker profile and their referrer
   select id, role, referred_by, full_name into v_worker
   from public.profiles
   where id = p_worker_id;
@@ -819,7 +820,7 @@ begin
 end;
 $$;
 
--- F. Approve Submission & Release Payment (With 5% Referral Commission & Status Check Protection)
+-- F. Approve Submission & Release Payment
 create or replace function public.approve_submission_and_pay(p_submission_id uuid)
 returns void
 language plpgsql
@@ -902,7 +903,7 @@ begin
     5.00
   );
 
-  -- 5. Update task slot count and mark completed if filled
+  -- 5. Update task slot count and mark completed if slots are filled
   select count(*) into v_approved_count
   from public.submissions
   where task_id = v_sub.task_id and status = 'approved';
@@ -1537,7 +1538,7 @@ alter table public.notifications enable row level security;
 alter table public.notification_reads enable row level security;
 alter table public.system_settings enable row level security;
 
--- Drop all old policies to avoid duplicates
+-- Drop old policies to prevent naming collisions
 drop policy if exists "profiles_select_policy" on public.profiles;
 drop policy if exists "profiles_insert_policy" on public.profiles;
 drop policy if exists "profiles_update_policy" on public.profiles;
@@ -1732,85 +1733,19 @@ create policy "settings_select_policy"
   using (true);
 
 -- ----------------------------------------------------------------------------
--- 7. DATA SANITATION, RE-SYNC & RETROACTIVE COMMISSION BACKFILL
+-- 7. SAFE TASK STATUS CLEANUP & RETROACTIVE COMMISSION BACKFILL
 -- ----------------------------------------------------------------------------
+-- Note: NO user profiles or roles are modified here.
 do $$
 declare
-  u record;
-  r record;
   s record;
-  v_meta_role text;
-  v_meta_name text;
-  v_ref_code text;
-  v_referrer_id uuid;
 begin
-  -- 1. Sync any existing profiles role and name from auth.users metadata
-  for u in select id, raw_user_meta_data, raw_app_meta_data, email from auth.users loop
-    v_meta_role := lower(trim(coalesce(
-      u.raw_user_meta_data->>'role',
-      u.raw_app_meta_data->>'role',
-      ''
-    )));
-    v_meta_name := coalesce(
-      u.raw_user_meta_data->>'full_name',
-      u.raw_user_meta_data->>'name',
-      split_part(u.email, '@', 1)
-    );
-
-    if v_meta_role in ('worker', 'employer', 'admin') then
-      update public.profiles
-      set role = v_meta_role,
-          full_name = coalesce(nullif(full_name, 'New User'), v_meta_name, full_name)
-      where id = u.id and role <> v_meta_role;
-    end if;
-
-    -- 2. Backfill missing referred_by links from signup metadata if missing
-    v_ref_code := upper(trim(coalesce(
-      u.raw_user_meta_data->>'referral_code',
-      u.raw_user_meta_data->>'ref',
-      u.raw_user_meta_data->>'referred_by',
-      ''
-    )));
-
-    if v_ref_code <> '' then
-      select id into v_referrer_id
-      from public.profiles
-      where upper(trim(referral_code)) = v_ref_code
-        and id <> u.id
-      limit 1;
-
-      if v_referrer_id is not null then
-        update public.profiles
-        set referred_by = v_referrer_id
-        where id = u.id and (referred_by is null or referred_by <> v_referrer_id);
-      end if;
-    end if;
-  end loop;
-
-  -- 3. Backfill unique referral codes for worker profiles lacking one
-  for r in 
-    select id, full_name 
-    from public.profiles 
-    where role = 'worker' 
-      and (referral_code is null or referral_code = '' or referral_code = 'TASKLY')
-  loop
-    update public.profiles
-    set referral_code = public.generate_unique_referral_code(r.full_name)
-    where id = r.id;
-  end loop;
-
-  -- 4. Clean non-worker referral code columns
-  update public.profiles
-  set referral_code = null,
-      referred_by = null
-  where role in ('employer', 'admin');
-
-  -- 5. Sanitize any legacy task status values to standard 'open' / 'completed'
+  -- 1. Ensure existing tasks have valid operational status
   update public.tasks
   set status = 'open'
   where status is null or status not in ('open', 'completed', 'cancelled', 'closed', 'active', 'paused', 'in_progress', 'draft', 'pending');
 
-  -- 6. Retroactively credit missing referral commissions for already-approved submissions
+  -- 2. Retroactively credit missing referral commissions for previously approved submissions
   for s in
     select sub.id as sub_id, sub.worker_id, t.reward, p.referred_by
     from public.submissions sub
@@ -1832,5 +1767,4 @@ begin
       5.00
     );
   end loop;
-end;
-$$;
+end $$;
