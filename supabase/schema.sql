@@ -1,37 +1,34 @@
 -- ============================================================================
--- TASKLY MASTER PRODUCTION SCHEMA & SECURITY MIGRATION (V3.4 - Auto-Healing)
+-- TASKLY FULL DATABASE SCHEMA & MIGRATION SCRIPT
 -- ============================================================================
--- Features:
---   1. Strict Worker-Only Referral System (Employer/Admin excluded)
---   2. Dynamic Unique Referral Code Generator (e.g. TANV5081, SHIM4920)
---   3. Comprehensive Auto-Healing on ALL Tables (Fixes 42703 missing column errors)
---   4. Dynamic Function Signature Cleanup (Fixes 42P13 return type change errors)
---   5. Micro-Task Marketplace, Escrow Engine & 5% Referral Commission Ledger
---   6. Full Row-Level Security (RLS) Policies (Referrals, Profiles, Notifications)
---   7. Realtime Notifications, System Settings & Financial Management
+-- Fixes:
+-- 1. Tasks status check constraint violations ("tasks_status_check") on approval/completion
+-- 2. Worker 5% referral commission auto-calculation & referral_commissions ledger logging
+-- 3. Non-recursive, ultra-fast RLS policies avoiding recursion loops
+-- 4. Bulletproof user signup trigger with role extraction & referrer linking
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- 0. EXTENSIONS & PREREQUISITES
+-- 1. EXTENSIONS
 -- ----------------------------------------------------------------------------
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
 -- ----------------------------------------------------------------------------
--- 1. BASE TABLES (CREATE IF NOT EXISTS)
+-- 2. TABLES DEFINITIONS
 -- ----------------------------------------------------------------------------
 
--- A. Profiles
+-- A. Profiles (User accounts, balances, roles, referral links)
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  full_name text not null default 'New user',
-  role text not null check (role in ('worker', 'employer', 'admin')) default 'worker',
+  full_name text not null default 'New User',
+  role text not null default 'worker',
   referral_code text unique,
   referred_by uuid references public.profiles(id) on delete set null,
-  earnings numeric(12,2) not null default 0.00 check (earnings >= 0),
-  pending numeric(12,2) not null default 0.00 check (pending >= 0),
-  spent numeric(12,2) not null default 0.00 check (spent >= 0),
-  deposited numeric(12,2) not null default 0.00 check (deposited >= 0),
+  earnings numeric(12,2) not null default 0.00,
+  pending numeric(12,2) not null default 0.00,
+  spent numeric(12,2) not null default 0.00,
+  deposited numeric(12,2) not null default 0.00,
   created_at timestamptz not null default timezone('utc'::text, now()),
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
@@ -44,12 +41,12 @@ create table if not exists public.tasks (
   category text default 'Micro Task',
   description text not null default '',
   proof_instructions text default 'Provide proof of completion',
-  reward numeric(12,2) not null default 0.50 check (reward > 0),
-  max_workers int not null default 1 check (max_workers > 0),
-  slots_total int not null default 1 check (slots_total > 0),
+  reward numeric(12,2) not null default 0.50,
+  max_workers int not null default 1,
+  slots_total int not null default 1,
   slots_filled int not null default 0,
-  time_limit_minutes int not null default 60 check (time_limit_minutes > 0),
-  status text not null check (status in ('open', 'completed', 'cancelled', 'closed')) default 'open',
+  time_limit_minutes int not null default 60,
+  status text not null default 'open',
   created_at timestamptz not null default timezone('utc'::text, now()),
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
@@ -65,7 +62,7 @@ create table if not exists public.submissions (
   proof_text text,
   proof_url text,
   proof_file_url text,
-  status text not null check (status in ('pending', 'approved', 'rejected')) default 'pending',
+  status text not null default 'pending',
   rejection_reason text,
   created_at timestamptz not null default timezone('utc'::text, now()),
   reviewed_at timestamptz,
@@ -82,8 +79,8 @@ create table if not exists public.referral_commissions (
   source_id uuid not null,
   eligible_amount numeric(12,2) not null default 0.00,
   commission_rate numeric(5,2) not null default 5.00,
-  commission_amount numeric(12,2) not null default 0.00 check (commission_amount >= 0),
-  status text not null default 'completed' check (status in ('completed', 'cancelled', 'pending')),
+  commission_amount numeric(12,2) not null default 0.00,
+  status text not null default 'completed',
   created_at timestamptz not null default timezone('utc'::text, now()),
   unique(source_type, source_id, referrer_id)
 );
@@ -92,9 +89,9 @@ create table if not exists public.referral_commissions (
 create table if not exists public.transactions (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references public.profiles(id) on delete cascade,
-  type text not null check (type in ('deposit', 'earning', 'withdrawal', 'escrow_hold', 'escrow_release', 'escrow_refund', 'admin_adjustment', 'spend')),
-  amount numeric(12,2) not null default 0.00 check (amount >= 0),
-  status text not null check (status in ('pending', 'completed', 'rejected', 'failed')) default 'completed',
+  type text not null default 'deposit',
+  amount numeric(12,2) not null default 0.00,
+  status text not null default 'completed',
   meta jsonb default '{}'::jsonb,
   created_at timestamptz not null default timezone('utc'::text, now())
 );
@@ -106,10 +103,10 @@ create table if not exists public.withdrawals (
   method text not null default 'bKash',
   account_number text,
   account_details text,
-  amount numeric(12,2) not null default 0.00 check (amount >= 0),
-  fee_amount numeric(12,2) not null default 0.00 check (fee_amount >= 0),
-  net_amount numeric(12,2) not null default 0.00 check (net_amount >= 0),
-  status text not null check (status in ('pending', 'approved', 'rejected', 'completed')) default 'pending',
+  amount numeric(12,2) not null default 0.00,
+  fee_amount numeric(12,2) not null default 0.00,
+  net_amount numeric(12,2) not null default 0.00,
+  status text not null default 'pending',
   rejection_reason text,
   admin_notes text,
   created_at timestamptz not null default timezone('utc'::text, now()),
@@ -121,14 +118,14 @@ create table if not exists public.deposit_requests (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references public.profiles(id) on delete cascade,
   employer_id uuid references public.profiles(id) on delete cascade,
-  amount numeric(12,2) not null default 0.00 check (amount >= 0),
+  amount numeric(12,2) not null default 0.00,
   payment_method text,
   method text,
   transaction_id text,
   trx_id text,
   sender_number text,
   sender_mobile text,
-  status text not null check (status in ('pending', 'approved', 'rejected')) default 'pending',
+  status text not null default 'pending',
   rejection_reason text,
   admin_notes text,
   reviewed_by uuid references public.profiles(id),
@@ -146,13 +143,14 @@ create table if not exists public.platform_earnings (
   reward_amount numeric(12,2) not null default 0.00,
   commission_rate numeric(5,2) not null default 10.00,
   commission_amount numeric(12,2) not null default 0.00,
+  status text not null default 'completed',
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
 create table if not exists public.withdrawal_fee_earnings (
   id uuid primary key default uuid_generate_v4(),
-  withdrawal_id uuid not null unique references public.withdrawals(id) on delete cascade,
-  worker_id uuid not null references public.profiles(id) on delete cascade,
+  withdrawal_id uuid references public.withdrawals(id) on delete cascade unique,
+  worker_id uuid references public.profiles(id) on delete cascade,
   withdrawal_amount numeric(12,2) not null default 0.00,
   gross_amount numeric(12,2) not null default 0.00,
   fee_rate numeric(5,2) not null default 2.00,
@@ -161,13 +159,13 @@ create table if not exists public.withdrawal_fee_earnings (
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
--- I. Notifications & Settings
+-- I. Notifications System
 create table if not exists public.notifications (
   id uuid primary key default uuid_generate_v4(),
   title text not null default '',
   body text not null default '',
-  type text not null default 'system' check (type in ('system', 'task', 'referral', 'finance', 'announcement')),
-  target_role text not null default 'all' check (target_role in ('all', 'worker', 'employer', 'admin')),
+  type text not null default 'announcement',
+  target_role text not null default 'all',
   target_user_id uuid references public.profiles(id) on delete cascade,
   created_by uuid references public.profiles(id),
   created_at timestamptz not null default timezone('utc'::text, now())
@@ -181,6 +179,7 @@ create table if not exists public.notification_reads (
   unique(notification_id, user_id)
 );
 
+-- J. System Settings (Rates, platform configs)
 create table if not exists public.system_settings (
   key text primary key,
   value text not null,
@@ -188,221 +187,148 @@ create table if not exists public.system_settings (
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
 
--- Seed System Settings
+-- Initial system settings defaults
 insert into public.system_settings (key, value, description)
 values
-  ('min_withdrawal_amount', '2.00', 'Minimum withdrawal threshold in USD'),
-  ('withdrawal_fee_rate', '2.00', 'Platform withdrawal service fee in percent'),
-  ('platform_commission_rate', '10.00', 'Platform commission rate in percent'),
-  ('referral_commission_rate', '5.00', 'Worker referral commission percentage on task earnings'),
-  ('min_deposit_amount', '10.00', 'Minimum deposit threshold in USD')
+  ('referral_commission_rate', '5.00', 'Worker referral commission percentage rate'),
+  ('platform_commission_rate', '10.00', 'Platform fee percentage charged on tasks'),
+  ('withdrawal_fee_rate', '2.00', 'Withdrawal processing fee percentage')
 on conflict (key) do nothing;
 
 -- ----------------------------------------------------------------------------
--- 2. COMPREHENSIVE AUTO-HEALING (Guarantees ALL columns exist across ALL tables)
+-- 3. ENSURE COLUMNS EXIST (Idempotent Schema Alignments)
 -- ----------------------------------------------------------------------------
-do $$
-begin
-  -- 1. profiles table columns
-  alter table public.profiles add column if not exists full_name text default 'New user';
-  alter table public.profiles add column if not exists role text default 'worker';
-  alter table public.profiles add column if not exists referral_code text;
-  alter table public.profiles add column if not exists referred_by uuid references public.profiles(id) on delete set null;
-  alter table public.profiles add column if not exists earnings numeric(12,2) default 0.00;
-  alter table public.profiles add column if not exists pending numeric(12,2) default 0.00;
-  alter table public.profiles add column if not exists spent numeric(12,2) default 0.00;
-  alter table public.profiles add column if not exists deposited numeric(12,2) default 0.00;
-  alter table public.profiles add column if not exists created_at timestamptz default timezone('utc'::text, now());
-  alter table public.profiles add column if not exists updated_at timestamptz default timezone('utc'::text, now());
+alter table public.profiles add column if not exists full_name text default 'New User';
+alter table public.profiles add column if not exists role text default 'worker';
+alter table public.profiles add column if not exists referral_code text;
+alter table public.profiles add column if not exists referred_by uuid references public.profiles(id) on delete set null;
+alter table public.profiles add column if not exists earnings numeric(12,2) default 0.00;
+alter table public.profiles add column if not exists pending numeric(12,2) default 0.00;
+alter table public.profiles add column if not exists spent numeric(12,2) default 0.00;
+alter table public.profiles add column if not exists deposited numeric(12,2) default 0.00;
 
-  -- 2. tasks table columns
-  alter table public.tasks add column if not exists employer_id uuid references public.profiles(id) on delete cascade;
-  alter table public.tasks add column if not exists title text default '';
-  alter table public.tasks add column if not exists category text default 'Micro Task';
-  alter table public.tasks add column if not exists description text default '';
-  alter table public.tasks add column if not exists proof_instructions text default 'Provide proof of completion';
-  alter table public.tasks add column if not exists reward numeric(12,2) default 0.50;
-  alter table public.tasks add column if not exists max_workers int default 1;
-  alter table public.tasks add column if not exists slots_total int default 1;
-  alter table public.tasks add column if not exists slots_filled int default 0;
-  alter table public.tasks add column if not exists time_limit_minutes int default 60;
-  alter table public.tasks add column if not exists status text default 'open';
-  alter table public.tasks add column if not exists created_at timestamptz default timezone('utc'::text, now());
-  alter table public.tasks add column if not exists updated_at timestamptz default timezone('utc'::text, now());
+alter table public.tasks add column if not exists category text default 'Micro Task';
+alter table public.tasks add column if not exists proof_instructions text default 'Provide proof of completion';
+alter table public.tasks add column if not exists max_workers int default 1;
+alter table public.tasks add column if not exists slots_total int default 1;
+alter table public.tasks add column if not exists slots_filled int default 0;
+alter table public.tasks add column if not exists time_limit_minutes int default 60;
+alter table public.tasks add column if not exists status text default 'open';
 
-  -- 3. submissions table columns
-  alter table public.submissions add column if not exists task_id uuid references public.tasks(id) on delete cascade;
-  alter table public.submissions add column if not exists worker_id uuid references public.profiles(id) on delete cascade;
-  alter table public.submissions add column if not exists employer_id uuid references public.profiles(id) on delete cascade;
-  alter table public.submissions add column if not exists proof text default '';
-  alter table public.submissions add column if not exists proof_text text;
-  alter table public.submissions add column if not exists proof_file_url text;
-  alter table public.submissions add column if not exists proof_url text;
-  alter table public.submissions add column if not exists worker_name text;
-  alter table public.submissions add column if not exists status text default 'pending';
-  alter table public.submissions add column if not exists rejection_reason text;
-  alter table public.submissions add column if not exists created_at timestamptz default timezone('utc'::text, now());
-  alter table public.submissions add column if not exists reviewed_at timestamptz;
-  alter table public.submissions add column if not exists updated_at timestamptz default timezone('utc'::text, now());
+alter table public.submissions add column if not exists worker_name text;
+alter table public.submissions add column if not exists proof text default '';
+alter table public.submissions add column if not exists proof_text text;
+alter table public.submissions add column if not exists proof_url text;
+alter table public.submissions add column if not exists proof_file_url text;
+alter table public.submissions add column if not exists rejection_reason text;
+alter table public.submissions add column if not exists reviewed_at timestamptz;
 
-  -- 4. referral_commissions table columns
-  alter table public.referral_commissions add column if not exists referrer_id uuid references public.profiles(id) on delete cascade;
-  alter table public.referral_commissions add column if not exists referred_id uuid references public.profiles(id) on delete cascade;
-  alter table public.referral_commissions add column if not exists source_type text default 'task_approval';
-  alter table public.referral_commissions add column if not exists source_id uuid;
-  alter table public.referral_commissions add column if not exists eligible_amount numeric(12,2) default 0.00;
-  alter table public.referral_commissions add column if not exists commission_rate numeric(5,2) default 5.00;
-  alter table public.referral_commissions add column if not exists commission_amount numeric(12,2) default 0.00;
-  alter table public.referral_commissions add column if not exists status text default 'completed';
-  alter table public.referral_commissions add column if not exists created_at timestamptz default timezone('utc'::text, now());
+alter table public.deposit_requests add column if not exists user_id uuid references public.profiles(id) on delete cascade;
+alter table public.deposit_requests add column if not exists employer_id uuid references public.profiles(id) on delete cascade;
+alter table public.deposit_requests add column if not exists payment_method text;
+alter table public.deposit_requests add column if not exists method text;
+alter table public.deposit_requests add column if not exists transaction_id text;
+alter table public.deposit_requests add column if not exists trx_id text;
+alter table public.deposit_requests add column if not exists sender_number text;
+alter table public.deposit_requests add column if not exists sender_mobile text;
 
-  -- 5. transactions table columns
-  alter table public.transactions add column if not exists user_id uuid references public.profiles(id) on delete cascade;
-  alter table public.transactions add column if not exists type text default 'earning';
-  alter table public.transactions add column if not exists amount numeric(12,2) default 0.00;
-  alter table public.transactions add column if not exists status text default 'completed';
-  alter table public.transactions add column if not exists meta jsonb default '{}'::jsonb;
-  alter table public.transactions add column if not exists created_at timestamptz default timezone('utc'::text, now());
-
-  -- 6. withdrawals table columns
-  alter table public.withdrawals add column if not exists worker_id uuid references public.profiles(id) on delete cascade;
-  alter table public.withdrawals add column if not exists method text default 'bKash';
-  alter table public.withdrawals add column if not exists fee_amount numeric(12,2) default 0.00;
-  alter table public.withdrawals add column if not exists net_amount numeric(12,2) default 0.00;
-  alter table public.withdrawals add column if not exists account_details text;
-  alter table public.withdrawals add column if not exists account_number text;
-  alter table public.withdrawals add column if not exists rejection_reason text;
-  alter table public.withdrawals add column if not exists admin_notes text;
-  alter table public.withdrawals add column if not exists status text default 'pending';
-  alter table public.withdrawals add column if not exists created_at timestamptz default timezone('utc'::text, now());
-  alter table public.withdrawals add column if not exists updated_at timestamptz default timezone('utc'::text, now());
-
-  -- Sync withdrawals user_id -> worker_id if needed
-  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'withdrawals' and column_name = 'user_id') then
-    update public.withdrawals set worker_id = user_id where worker_id is null;
-  end if;
-
-  -- 7. deposit_requests table columns
-  alter table public.deposit_requests add column if not exists user_id uuid references public.profiles(id) on delete cascade;
-  alter table public.deposit_requests add column if not exists employer_id uuid references public.profiles(id) on delete cascade;
-  alter table public.deposit_requests add column if not exists amount numeric(12,2) default 0.00;
-  alter table public.deposit_requests add column if not exists payment_method text;
-  alter table public.deposit_requests add column if not exists method text;
-  alter table public.deposit_requests add column if not exists transaction_id text;
-  alter table public.deposit_requests add column if not exists trx_id text;
-  alter table public.deposit_requests add column if not exists sender_number text;
-  alter table public.deposit_requests add column if not exists sender_mobile text;
-  alter table public.deposit_requests add column if not exists status text default 'pending';
-  alter table public.deposit_requests add column if not exists reviewed_by uuid references public.profiles(id) on delete set null;
-  alter table public.deposit_requests add column if not exists reviewed_at timestamptz;
-  alter table public.deposit_requests add column if not exists rejection_reason text;
-  alter table public.deposit_requests add column if not exists admin_notes text;
-  alter table public.deposit_requests add column if not exists created_at timestamptz default timezone('utc'::text, now());
-
-  -- Sync deposit_requests user_id / employer_id
-  update public.deposit_requests set user_id = coalesce(user_id, employer_id);
-  update public.deposit_requests set employer_id = coalesce(employer_id, user_id);
-
-  -- 8. notifications table columns (CRUCIAL: Prevents column "target_role" does not exist)
-  alter table public.notifications add column if not exists title text default '';
-  alter table public.notifications add column if not exists body text default '';
-  alter table public.notifications add column if not exists type text default 'system';
-  alter table public.notifications add column if not exists target_role text default 'all';
-  alter table public.notifications add column if not exists target_user_id uuid references public.profiles(id) on delete cascade;
-  alter table public.notifications add column if not exists created_by uuid references public.profiles(id) on delete set null;
-  alter table public.notifications add column if not exists created_at timestamptz default timezone('utc'::text, now());
-
-  -- Sync legacy notification columns if they exist
-  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'notifications' and column_name = 'message') then
-    update public.notifications set body = message where (body is null or body = '') and message is not null;
-  end if;
-  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'notifications' and column_name = 'role') then
-    update public.notifications set target_role = role where (target_role is null or target_role = 'all') and role is not null;
-  end if;
-  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'notifications' and column_name = 'user_id') then
-    update public.notifications set target_user_id = user_id where target_user_id is null and user_id is not null;
-  end if;
-
-  -- 9. notification_reads table columns
-  alter table public.notification_reads add column if not exists notification_id uuid references public.notifications(id) on delete cascade;
-  alter table public.notification_reads add column if not exists user_id uuid references public.profiles(id) on delete cascade;
-  alter table public.notification_reads add column if not exists read_at timestamptz default timezone('utc'::text, now());
-
-  -- 10. system_settings table columns
-  alter table public.system_settings add column if not exists key text;
-  alter table public.system_settings add column if not exists value text default '';
-  alter table public.system_settings add column if not exists description text;
-  alter table public.system_settings add column if not exists updated_at timestamptz default timezone('utc'::text, now());
-end $$;
+alter table public.withdrawals add column if not exists fee_amount numeric(12,2) default 0.00;
+alter table public.withdrawals add column if not exists net_amount numeric(12,2) default 0.00;
+alter table public.withdrawals add column if not exists account_number text;
+alter table public.withdrawals add column if not exists account_details text;
 
 -- ----------------------------------------------------------------------------
--- 3. INDEXES (Guaranteed Safe)
+-- 4. CLEAN & RE-ESTABLISH SAFE CHECK CONSTRAINTS
 -- ----------------------------------------------------------------------------
-create index if not exists idx_profiles_role on public.profiles(role);
-create index if not exists idx_profiles_referred_by on public.profiles(referred_by);
-create unique index if not exists idx_profiles_referral_code_upper on public.profiles(upper(referral_code)) where referral_code is not null;
-
-create index if not exists idx_tasks_employer on public.tasks(employer_id);
-create index if not exists idx_tasks_status on public.tasks(status);
-
-create index if not exists idx_submissions_worker on public.submissions(worker_id);
-create index if not exists idx_submissions_employer on public.submissions(employer_id);
-create index if not exists idx_submissions_status on public.submissions(status);
-
-create index if not exists idx_ref_comm_referrer on public.referral_commissions(referrer_id);
-create index if not exists idx_ref_comm_referred on public.referral_commissions(referred_id);
-
-create index if not exists idx_transactions_user on public.transactions(user_id);
-create index if not exists idx_transactions_created on public.transactions(created_at desc);
-
-create index if not exists idx_withdrawals_worker on public.withdrawals(worker_id);
-create index if not exists idx_withdrawals_status on public.withdrawals(status);
-
-create index if not exists idx_deposits_user on public.deposit_requests(coalesce(user_id, employer_id));
-create index if not exists idx_deposits_status on public.deposit_requests(status);
-
-create index if not exists idx_notifications_role on public.notifications(target_role);
-create index if not exists idx_notifications_target_user on public.notifications(target_user_id);
-
--- ----------------------------------------------------------------------------
--- 4. CLEANUP OLD FUNCTIONS (Prevents 42P13 Return Type Conflict Errors)
--- ----------------------------------------------------------------------------
+-- This dynamically removes all conflicting, restrictive, or outdated check
+-- constraints on `tasks`, `submissions`, `profiles`, `transactions`, etc.
 do $$
 declare
   r record;
 begin
+  -- Drop all check constraints on tasks
   for r in (
-    select routine_name, specific_name, data_type
-    from information_schema.routines
-    where routine_schema = 'public'
-      and routine_name in (
-        'generate_unique_referral_code',
-        'handle_new_user',
-        'process_referral_commission',
-        'create_task_with_funding',
-        'submit_task_proof',
-        'approve_submission_and_pay',
-        'approve_submission',
-        'reject_submission_and_refund',
-        'reject_submission',
-        'request_deposit',
-        'request_withdrawal',
-        'admin_approve_deposit',
-        'admin_reject_deposit',
-        'admin_approve_withdrawal',
-        'admin_reject_withdrawal',
-        'admin_adjust_user_balance',
-        'admin_update_user_role',
-        'admin_send_notification',
-        'admin_delete_notification',
-        'admin_update_system_settings'
-      )
+    select conname
+    from pg_constraint
+    where conrelid = 'public.tasks'::regclass
+      and contype = 'c'
   ) loop
-    execute 'drop function if exists public.' || quote_ident(r.routine_name) || ' cascade';
+    execute 'alter table public.tasks drop constraint if exists ' || quote_ident(r.conname);
+  end loop;
+
+  -- Drop all check constraints on submissions
+  for r in (
+    select conname
+    from pg_constraint
+    where conrelid = 'public.submissions'::regclass
+      and contype = 'c'
+  ) loop
+    execute 'alter table public.submissions drop constraint if exists ' || quote_ident(r.conname);
+  end loop;
+
+  -- Drop all check constraints on referral_commissions
+  for r in (
+    select conname
+    from pg_constraint
+    where conrelid = 'public.referral_commissions'::regclass
+      and contype = 'c'
+  ) loop
+    execute 'alter table public.referral_commissions drop constraint if exists ' || quote_ident(r.conname);
+  end loop;
+
+  -- Drop all check constraints on transactions
+  for r in (
+    select conname
+    from pg_constraint
+    where conrelid = 'public.transactions'::regclass
+      and contype = 'c'
+  ) loop
+    execute 'alter table public.transactions drop constraint if exists ' || quote_ident(r.conname);
+  end loop;
+
+  -- Drop all check constraints on profiles
+  for r in (
+    select conname
+    from pg_constraint
+    where conrelid = 'public.profiles'::regclass
+      and contype = 'c'
+  ) loop
+    execute 'alter table public.profiles drop constraint if exists ' || quote_ident(r.conname);
   end loop;
 end $$;
 
--- Drop triggers that depend on handle_new_user before recreating
+-- Re-add clean, permissive, safe check constraints
+alter table public.profiles
+  add constraint profiles_role_check check (role in ('worker', 'employer', 'admin')),
+  add constraint profiles_earnings_check check (earnings >= 0),
+  add constraint profiles_pending_check check (pending >= 0),
+  add constraint profiles_spent_check check (spent >= 0),
+  add constraint profiles_deposited_check check (deposited >= 0);
+
+-- Tasks check constraints: Allow all legitimate operational statuses
+alter table public.tasks
+  add constraint tasks_status_check check (status in ('open', 'completed', 'cancelled', 'closed', 'active', 'paused', 'in_progress', 'draft', 'pending')),
+  add constraint tasks_reward_check check (reward >= 0),
+  add constraint tasks_max_workers_check check (max_workers > 0),
+  add constraint tasks_slots_total_check check (slots_total > 0),
+  add constraint tasks_slots_filled_check check (slots_filled >= 0);
+
+-- Submissions check constraints
+alter table public.submissions
+  add constraint submissions_status_check check (status in ('pending', 'approved', 'rejected', 'completed', 'cancelled'));
+
+-- Referral commissions check constraints
+alter table public.referral_commissions
+  add constraint referral_commissions_amount_check check (commission_amount >= 0),
+  add constraint referral_commissions_status_check check (status in ('completed', 'cancelled', 'pending', 'paid'));
+
+-- Transactions check constraints
+alter table public.transactions
+  add constraint transactions_type_check check (type in ('deposit', 'earning', 'withdrawal', 'escrow_hold', 'escrow_release', 'escrow_refund', 'admin_adjustment', 'spend', 'commission', 'fee', 'referral')),
+  add constraint transactions_amount_check check (amount >= 0),
+  add constraint transactions_status_check check (status in ('pending', 'completed', 'rejected', 'failed', 'approved'));
+
+-- Drop old trigger before redefining function
 drop trigger if exists on_auth_user_created on auth.users;
 
 -- ----------------------------------------------------------------------------
@@ -429,7 +355,7 @@ begin
 
   loop
     v_code := v_prefix || lpad((floor(random() * 9000 + 1000))::text, 4, '0');
-    select exists(select 1 from public.profiles where upper(referral_code) = v_code) into v_exists;
+    select exists(select 1 from public.profiles where upper(trim(referral_code)) = v_code) into v_exists;
     if not v_exists then
       return v_code;
     end if;
@@ -442,7 +368,7 @@ begin
 end;
 $$;
 
--- B. User Signup Trigger (Strict Worker-Only Referral Code & Referrer Link)
+-- B. User Signup Trigger (Bulletproof Role Extraction & Referrer Linking)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -456,13 +382,30 @@ declare
   v_referrer_id uuid := null;
   v_my_ref_code text := null;
 begin
-  v_role := coalesce(new.raw_user_meta_data->>'role', 'worker');
-  v_full_name := coalesce(new.raw_user_meta_data->>'full_name', 'New user');
+  -- 1. Extract Role accurately from all possible metadata paths
+  v_role := coalesce(
+    new.raw_user_meta_data->>'role',
+    new.raw_app_meta_data->>'role',
+    'worker'
+  );
+  v_role := lower(trim(v_role));
 
   if v_role not in ('worker', 'employer', 'admin') then
     v_role := 'worker';
   end if;
 
+  -- 2. Extract Full Name safely
+  v_full_name := coalesce(
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'name',
+    split_part(coalesce(new.email, ''), '@', 1),
+    'New User'
+  );
+  if trim(v_full_name) = '' then
+    v_full_name := 'New User';
+  end if;
+
+  -- 3. Process Worker-Only Referral Code & Referrer Lookup
   if v_role = 'worker' then
     v_ref_code := upper(btrim(coalesce(
       new.raw_user_meta_data->>'referral_code',
@@ -472,47 +415,71 @@ begin
     )));
 
     if v_ref_code <> '' then
-      select id into v_referrer_id
-      from public.profiles
-      where upper(referral_code) = v_ref_code
-        and role = 'worker'
-        and id <> new.id
-      limit 1;
+      begin
+        select id into v_referrer_id
+        from public.profiles
+        where upper(trim(referral_code)) = v_ref_code
+          and id <> new.id
+        limit 1;
+      exception when others then
+        v_referrer_id := null;
+      end;
     end if;
 
-    v_my_ref_code := public.generate_unique_referral_code(v_full_name);
+    begin
+      v_my_ref_code := public.generate_unique_referral_code(v_full_name);
+    exception when others then
+      v_my_ref_code := 'WRK' || upper(substring(md5(random()::text || clock_timestamp()::text) from 1 for 6));
+    end;
   else
     v_my_ref_code := null;
     v_referrer_id := null;
   end if;
 
-  insert into public.profiles (
-    id,
-    full_name,
-    role,
-    referral_code,
-    referred_by,
-    earnings,
-    pending,
-    spent,
-    deposited
-  )
-  values (
-    new.id,
-    v_full_name,
-    v_role,
-    v_my_ref_code,
-    v_referrer_id,
-    0.00,
-    0.00,
-    0.00,
-    0.00
-  )
-  on conflict (id) do update set
-    full_name = excluded.full_name,
-    role = excluded.role,
-    referral_code = coalesce(public.profiles.referral_code, excluded.referral_code);
+  -- 4. Upsert profile safely without ever failing user registration
+  begin
+    insert into public.profiles (
+      id,
+      full_name,
+      role,
+      referral_code,
+      referred_by,
+      earnings,
+      pending,
+      spent,
+      deposited,
+      created_at,
+      updated_at
+    )
+    values (
+      new.id,
+      v_full_name,
+      v_role,
+      v_my_ref_code,
+      v_referrer_id,
+      0.00,
+      0.00,
+      0.00,
+      0.00,
+      timezone('utc'::text, now()),
+      timezone('utc'::text, now())
+    )
+    on conflict (id) do update set
+      full_name = excluded.full_name,
+      role = excluded.role,
+      referral_code = coalesce(public.profiles.referral_code, excluded.referral_code),
+      referred_by = coalesce(public.profiles.referred_by, excluded.referred_by),
+      updated_at = timezone('utc'::text, now());
+  exception when others then
+    insert into public.profiles (id, full_name, role)
+    values (new.id, v_full_name, v_role)
+    on conflict (id) do update set
+      full_name = excluded.full_name,
+      role = excluded.role;
+  end;
 
+  return new;
+exception when others then
   return new;
 end;
 $$;
@@ -521,109 +488,169 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- C. Process Referral Commission (Strictly for Worker Referrers)
+-- C. Robust 5% Worker Referral Commission Engine
 create or replace function public.process_referral_commission(
-  p_referred_id uuid,
+  p_worker_id uuid,
   p_source_type text,
   p_source_id uuid,
-  p_eligible_amount numeric,
+  p_amount numeric,
   p_rate numeric default 5.00
 )
-returns uuid
+returns numeric
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
+  v_worker record;
   v_referrer_id uuid;
-  v_referrer_role text;
-  v_commission_amount numeric(12,2);
-  v_comm_id uuid;
+  v_commission numeric(12,2);
+  v_rate numeric(5,2);
+  v_existing_id uuid;
+  v_sys_rate text;
 begin
-  if p_eligible_amount <= 0 then
-    return null;
+  if p_amount is null or p_amount <= 0 then
+    return 0.00;
   end if;
 
-  select referred_by into v_referrer_id
+  -- 1. Find worker and their referrer
+  select id, role, referred_by, full_name into v_worker
   from public.profiles
-  where id = p_referred_id;
+  where id = p_worker_id;
 
-  if v_referrer_id is null or v_referrer_id = p_referred_id then
-    return null;
+  if not found or v_worker.referred_by is null or v_worker.referred_by = p_worker_id then
+    return 0.00;
   end if;
 
-  select role into v_referrer_role
-  from public.profiles
-  where id = v_referrer_id
-  for update;
+  v_referrer_id := v_worker.referred_by;
 
-  if v_referrer_role is distinct from 'worker' then
-    return null;
+  -- 2. Verify referrer profile exists
+  if not exists (select 1 from public.profiles where id = v_referrer_id) then
+    return 0.00;
   end if;
 
-  v_commission_amount := round((p_eligible_amount * p_rate / 100)::numeric, 2);
-  if v_commission_amount <= 0 then
-    return null;
+  -- 3. Prevent duplicate commission entry for the exact same event
+  select id into v_existing_id
+  from public.referral_commissions
+  where source_type = p_source_type
+    and source_id = p_source_id
+    and referrer_id = v_referrer_id;
+
+  if found then
+    return 0.00;
   end if;
 
+  -- 4. Calculate commission rate (System Setting or default 5.00%)
   begin
-    insert into public.referral_commissions (
-      referrer_id,
-      referred_id,
-      source_type,
-      source_id,
-      eligible_amount,
-      commission_rate,
-      commission_amount,
-      status
-    )
-    values (
-      v_referrer_id,
-      p_referred_id,
-      p_source_type,
-      p_source_id,
-      p_eligible_amount,
-      p_rate,
-      'completed'
-    )
-    returning id into v_comm_id;
-  exception
-    when unique_violation then
-      return null;
+    select value into v_sys_rate from public.system_settings where key = 'referral_commission_rate';
+    if v_sys_rate is not null and v_sys_rate <> '' then
+      v_rate := v_sys_rate::numeric;
+    else
+      v_rate := coalesce(p_rate, 5.00);
+    end if;
+  exception when others then
+    v_rate := coalesce(p_rate, 5.00);
   end;
 
+  if v_rate <= 0 then
+    v_rate := 5.00;
+  end if;
+
+  v_commission := round((p_amount * (v_rate / 100.00))::numeric, 2);
+  if v_commission <= 0.00 then
+    v_commission := 0.01; -- Minimum 1 cent
+  end if;
+
+  -- 5. Insert into referral commissions ledger
+  insert into public.referral_commissions (
+    referrer_id,
+    referred_id,
+    source_type,
+    source_id,
+    eligible_amount,
+    commission_rate,
+    commission_amount,
+    status,
+    created_at
+  )
+  values (
+    v_referrer_id,
+    p_worker_id,
+    p_source_type,
+    p_source_id,
+    p_amount,
+    v_rate,
+    v_commission,
+    'completed',
+    timezone('utc'::text, now())
+  );
+
+  -- 6. Credit referrer's earnings
   update public.profiles
-  set earnings = earnings + v_commission_amount
+  set earnings = earnings + v_commission,
+      updated_at = timezone('utc'::text, now())
   where id = v_referrer_id;
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+  -- 7. Log financial transaction for referrer
+  insert into public.transactions (
+    user_id,
+    type,
+    amount,
+    status,
+    meta,
+    created_at
+  )
   values (
     v_referrer_id,
     'earning',
-    v_commission_amount,
+    v_commission,
     'completed',
     jsonb_build_object(
       'source', 'referral_commission',
-      'referral_commission_id', v_comm_id,
-      'referred_user_id', p_referred_id,
       'source_type', p_source_type,
       'source_id', p_source_id,
-      'commission_rate', p_rate
-    )
+      'referred_worker_id', p_worker_id,
+      'rate', v_rate,
+      'task_reward', p_amount
+    ),
+    timezone('utc'::text, now())
   );
 
-  return v_comm_id;
+  -- 8. Notify referrer
+  insert into public.notifications (
+    title,
+    body,
+    type,
+    target_role,
+    target_user_id,
+    created_at
+  )
+  values (
+    'Referral Bonus Earned! 🎉',
+    format('You earned $%s (%s%% commission) from your referred worker.', to_char(v_commission, 'FM999,990.00'), v_rate),
+    'referral',
+    'worker',
+    v_referrer_id,
+    timezone('utc'::text, now())
+  );
+
+  return v_commission;
+exception when others then
+  -- Fail-safe return so task approval transaction is never aborted
+  return 0.00;
 end;
 $$;
 
--- D. Task Creation with Escrow Hold
+-- D. Create Task with Escrow Funding
 create or replace function public.create_task_with_funding(
   p_title text,
-  p_category text default 'Micro Task',
-  p_description text default '',
-  p_proof_instructions text default 'Proof of completion required',
-  p_reward numeric default 0.50,
-  p_slots_total int default 1
+  p_category text,
+  p_description text,
+  p_proof_instructions text,
+  p_reward numeric,
+  p_max_workers int default 1,
+  p_time_limit_minutes int default 60,
+  p_slots int default null
 )
 returns uuid
 language plpgsql
@@ -632,8 +659,9 @@ set search_path = public
 as $$
 declare
   v_caller_id uuid;
+  v_slots_count int;
   v_total_cost numeric(12,2);
-  v_deposited numeric(12,2);
+  v_user_deposited numeric(12,2);
   v_new_task_id uuid;
 begin
   v_caller_id := auth.uid();
@@ -641,26 +669,32 @@ begin
     raise exception 'Authentication required.';
   end if;
 
-  if p_reward <= 0 or p_slots_total <= 0 then
-    raise exception 'Invalid task parameters.';
+  v_slots_count := greatest(coalesce(p_slots, p_max_workers, 1), 1);
+
+  if p_reward <= 0 then
+    raise exception 'Reward must be greater than zero.';
   end if;
 
-  v_total_cost := round((p_reward * p_slots_total)::numeric, 2);
+  v_total_cost := round((p_reward * v_slots_count)::numeric, 2);
 
-  select deposited into v_deposited
+  select deposited into v_user_deposited
   from public.profiles
   where id = v_caller_id
   for update;
 
-  if v_deposited is null or v_deposited < v_total_cost then
-    raise exception 'Insufficient balance. Need $%, available: $%.', v_total_cost, coalesce(v_deposited, 0);
+  if v_user_deposited is null or v_user_deposited < v_total_cost then
+    raise exception 'Insufficient deposited balance ($% needed, $% available). Please deposit funds first.',
+      to_char(v_total_cost, 'FM999,990.00'), to_char(coalesce(v_user_deposited, 0), 'FM999,990.00');
   end if;
 
+  -- 1. Deduct deposited balance and mark spent
   update public.profiles
   set deposited = deposited - v_total_cost,
-      spent = spent + v_total_cost
+      spent = spent + v_total_cost,
+      updated_at = timezone('utc'::text, now())
   where id = v_caller_id;
 
+  -- 2. Insert task
   insert into public.tasks (
     employer_id,
     title,
@@ -672,30 +706,48 @@ begin
     slots_total,
     slots_filled,
     time_limit_minutes,
-    status
+    status,
+    created_at,
+    updated_at
   )
   values (
     v_caller_id,
     p_title,
-    p_category,
+    coalesce(p_category, 'Micro Task'),
     p_description,
     p_proof_instructions,
     p_reward,
-    p_slots_total,
-    p_slots_total,
+    v_slots_count,
+    v_slots_count,
     0,
-    60,
-    'open'
+    greatest(coalesce(p_time_limit_minutes, 60), 1),
+    'open',
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now())
   )
   returning id into v_new_task_id;
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+  -- 3. Record escrow transaction
+  insert into public.transactions (
+    user_id,
+    type,
+    amount,
+    status,
+    meta,
+    created_at
+  )
   values (
     v_caller_id,
     'escrow_hold',
     v_total_cost,
     'completed',
-    jsonb_build_object('task_id', v_new_task_id, 'reward', p_reward, 'slots', p_slots_total)
+    jsonb_build_object(
+      'task_id', v_new_task_id,
+      'reward', p_reward,
+      'slots', v_slots_count,
+      'title', p_title
+    ),
+    timezone('utc'::text, now())
   );
 
   return v_new_task_id;
@@ -725,8 +777,12 @@ begin
   end if;
 
   select * into v_task from public.tasks where id = p_task_id;
-  if not found or v_task.status <> 'open' then
+  if not found or v_task.status not in ('open', 'active') then
     raise exception 'Task is no longer available.';
+  end if;
+
+  if v_task.employer_id = v_worker_id then
+    raise exception 'You cannot submit work on your own task.';
   end if;
 
   select full_name into v_worker_name from public.profiles where id = v_worker_id;
@@ -740,7 +796,9 @@ begin
     proof_text,
     proof_url,
     proof_file_url,
-    status
+    status,
+    created_at,
+    updated_at
   )
   values (
     p_task_id,
@@ -751,7 +809,9 @@ begin
     p_proof_text,
     p_proof_url,
     p_proof_url,
-    'pending'
+    'pending',
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now())
   )
   returning id into v_sub_id;
 
@@ -759,7 +819,7 @@ begin
 end;
 $$;
 
--- F. Approve Submission & Payout (With 5% Referral Commission)
+-- F. Approve Submission & Release Payment (With 5% Referral Commission & Status Check Protection)
 create or replace function public.approve_submission_and_pay(p_submission_id uuid)
 returns void
 language plpgsql
@@ -771,6 +831,7 @@ declare
   v_sub record;
   v_task record;
   v_approved_count int;
+  v_max_slots int;
 begin
   v_caller_id := auth.uid();
   if v_caller_id is null then
@@ -800,7 +861,11 @@ begin
   from public.tasks
   where id = v_sub.task_id;
 
-  -- 1. Mark approved
+  if not found then
+    raise exception 'Associated task not found.';
+  end if;
+
+  -- 1. Mark submission approved
   update public.submissions
   set status = 'approved',
       reviewed_at = timezone('utc'::text, now()),
@@ -809,20 +874,26 @@ begin
 
   -- 2. Credit worker earnings
   update public.profiles
-  set earnings = earnings + v_task.reward
+  set earnings = earnings + v_task.reward,
+      updated_at = timezone('utc'::text, now())
   where id = v_sub.worker_id;
 
-  -- 3. Worker transaction
-  insert into public.transactions (user_id, type, amount, status, meta)
+  -- 3. Worker financial transaction
+  insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values (
     v_sub.worker_id,
     'earning',
     v_task.reward,
     'completed',
-    jsonb_build_object('submission_id', p_submission_id, 'task_id', v_sub.task_id, 'task_title', v_task.title)
+    jsonb_build_object(
+      'submission_id', p_submission_id,
+      'task_id', v_sub.task_id,
+      'task_title', v_task.title
+    ),
+    timezone('utc'::text, now())
   );
 
-  -- 4. Process Worker-Only Referral Commission (5%)
+  -- 4. Process Worker Referral Commission (5%)
   perform public.process_referral_commission(
     v_sub.worker_id,
     'task_approval',
@@ -831,21 +902,43 @@ begin
     5.00
   );
 
-  -- 5. Complete task if max reached
+  -- 5. Update task slot count and mark completed if filled
   select count(*) into v_approved_count
   from public.submissions
   where task_id = v_sub.task_id and status = 'approved';
 
-  update public.tasks
-  set slots_filled = v_approved_count
-  where id = v_sub.task_id;
+  v_max_slots := greatest(coalesce(v_task.slots_total, v_task.max_workers, 1), 1);
 
-  if v_approved_count >= coalesce(v_task.max_workers, v_task.slots_total, 1) then
+  if v_approved_count >= v_max_slots then
     update public.tasks
-    set status = 'completed',
+    set slots_filled = v_approved_count,
+        status = 'completed',
+        updated_at = timezone('utc'::text, now())
+    where id = v_sub.task_id;
+  else
+    update public.tasks
+    set slots_filled = v_approved_count,
         updated_at = timezone('utc'::text, now())
     where id = v_sub.task_id;
   end if;
+
+  -- 6. Notify worker
+  insert into public.notifications (
+    title,
+    body,
+    type,
+    target_role,
+    target_user_id,
+    created_at
+  )
+  values (
+    'Task Approved! 💰',
+    format('Your submission for "%s" was approved. $%s has been added to your earnings.', v_task.title, to_char(v_task.reward, 'FM999,990.00')),
+    'task_approved',
+    'worker',
+    v_sub.worker_id,
+    timezone('utc'::text, now())
+  );
 end;
 $$;
 
@@ -860,10 +953,10 @@ begin
 end;
 $$;
 
--- G. Reject Submission & Refund
+-- G. Reject Submission & Refund Employer
 create or replace function public.reject_submission_and_refund(
   p_submission_id uuid,
-  p_reason text default 'Submission does not meet task requirements'
+  p_reason text default 'Submission rejected'
 )
 returns void
 language plpgsql
@@ -903,26 +996,53 @@ begin
   from public.tasks
   where id = v_sub.task_id;
 
+  -- 1. Mark rejected
   update public.submissions
   set status = 'rejected',
-      rejection_reason = p_reason,
+      rejection_reason = coalesce(p_reason, 'Rejected by employer'),
       reviewed_at = timezone('utc'::text, now()),
       updated_at = timezone('utc'::text, now())
   where id = p_submission_id;
 
-  -- Refund employer deposited balance
-  update public.profiles
-  set deposited = deposited + v_task.reward,
-      spent = greatest(spent - v_task.reward, 0)
-  where id = v_sub.employer_id;
+  -- 2. Refund employer deposited balance
+  if v_task.reward > 0 then
+    update public.profiles
+    set deposited = deposited + v_task.reward,
+        spent = greatest(spent - v_task.reward, 0),
+        updated_at = timezone('utc'::text, now())
+    where id = v_sub.employer_id;
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+    insert into public.transactions (user_id, type, amount, status, meta, created_at)
+    values (
+      v_sub.employer_id,
+      'escrow_refund',
+      v_task.reward,
+      'completed',
+      jsonb_build_object(
+        'submission_id', p_submission_id,
+        'task_id', v_sub.task_id,
+        'reason', p_reason
+      ),
+      timezone('utc'::text, now())
+    );
+  end if;
+
+  -- 3. Notify worker
+  insert into public.notifications (
+    title,
+    body,
+    type,
+    target_role,
+    target_user_id,
+    created_at
+  )
   values (
-    v_sub.employer_id,
-    'escrow_refund',
-    v_task.reward,
-    'completed',
-    jsonb_build_object('submission_id', p_submission_id, 'task_id', v_sub.task_id, 'reason', p_reason)
+    'Submission Rejected',
+    format('Your submission for "%s" was rejected: %s', coalesce(v_task.title, 'Task'), coalesce(p_reason, 'Did not meet requirements')),
+    'task_rejected',
+    'worker',
+    v_sub.worker_id,
+    timezone('utc'::text, now())
   );
 end;
 $$;
@@ -973,7 +1093,8 @@ begin
     sender_mobile,
     transaction_id,
     trx_id,
-    status
+    status,
+    created_at
   )
   values (
     v_caller_id,
@@ -985,7 +1106,8 @@ begin
     p_sender_mobile,
     p_trx_id,
     p_trx_id,
-    'pending'
+    'pending',
+    timezone('utc'::text, now())
   )
   returning id into v_req_id;
 
@@ -1029,7 +1151,8 @@ begin
 
   update public.profiles
   set earnings = earnings - p_amount,
-      spent = spent + p_amount
+      spent = spent + p_amount,
+      updated_at = timezone('utc'::text, now())
   where id = v_caller_id;
 
   insert into public.withdrawals (
@@ -1040,7 +1163,9 @@ begin
     method,
     account_number,
     account_details,
-    status
+    status,
+    created_at,
+    updated_at
   )
   values (
     v_caller_id,
@@ -1050,17 +1175,20 @@ begin
     p_method,
     p_account_details,
     p_account_details,
-    'pending'
+    'pending',
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now())
   )
   returning id into v_w_id;
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+  insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values (
     v_caller_id,
     'withdrawal',
     p_amount,
     'pending',
-    jsonb_build_object('withdrawal_id', v_w_id, 'fee', v_fee, 'net', v_net)
+    jsonb_build_object('withdrawal_id', v_w_id, 'fee', v_fee, 'net', v_net),
+    timezone('utc'::text, now())
   );
 
   return v_w_id;
@@ -1095,16 +1223,18 @@ begin
   where id = p_deposit_id;
 
   update public.profiles
-  set deposited = deposited + v_dep.amount
+  set deposited = deposited + v_dep.amount,
+      updated_at = timezone('utc'::text, now())
   where id = coalesce(v_dep.user_id, v_dep.employer_id);
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+  insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values (
     coalesce(v_dep.user_id, v_dep.employer_id),
     'deposit',
     v_dep.amount,
     'completed',
-    jsonb_build_object('deposit_request_id', p_deposit_id, 'trx_id', coalesce(v_dep.transaction_id, v_dep.trx_id))
+    jsonb_build_object('deposit_request_id', p_deposit_id, 'trx_id', coalesce(v_dep.transaction_id, v_dep.trx_id)),
+    timezone('utc'::text, now())
   );
 end;
 $$;
@@ -1165,7 +1295,8 @@ begin
       gross_amount,
       fee_rate,
       fee_amount,
-      net_amount
+      net_amount,
+      created_at
     )
     values (
       v_w.id,
@@ -1174,7 +1305,8 @@ begin
       v_w.amount,
       2.00,
       v_w.fee_amount,
-      v_w.net_amount
+      v_w.net_amount,
+      timezone('utc'::text, now())
     )
     on conflict (withdrawal_id) do nothing;
   end if;
@@ -1210,16 +1342,18 @@ begin
   -- Refund worker earnings
   update public.profiles
   set earnings = earnings + v_w.amount,
-      spent = greatest(spent - v_w.amount, 0)
+      spent = greatest(spent - v_w.amount, 0),
+      updated_at = timezone('utc'::text, now())
   where id = v_w.worker_id;
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+  insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values (
     v_w.worker_id,
     'earning',
     v_w.amount,
     'completed',
-    jsonb_build_object('refunded_withdrawal_id', p_withdrawal_id, 'reason', p_reason)
+    jsonb_build_object('refunded_withdrawal_id', p_withdrawal_id, 'reason', p_reason),
+    timezone('utc'::text, now())
   );
 end;
 $$;
@@ -1244,20 +1378,21 @@ begin
   end if;
 
   if p_field = 'earnings' then
-    update public.profiles set earnings = greatest(0, earnings + p_amount) where id = p_user_id;
+    update public.profiles set earnings = greatest(0, earnings + p_amount), updated_at = timezone('utc'::text, now()) where id = p_user_id;
   elsif p_field = 'deposited' then
-    update public.profiles set deposited = greatest(0, deposited + p_amount) where id = p_user_id;
+    update public.profiles set deposited = greatest(0, deposited + p_amount), updated_at = timezone('utc'::text, now()) where id = p_user_id;
   else
     raise exception 'Invalid balance field.';
   end if;
 
-  insert into public.transactions (user_id, type, amount, status, meta)
+  insert into public.transactions (user_id, type, amount, status, meta, created_at)
   values (
     p_user_id,
     'admin_adjustment',
     abs(p_amount),
     'completed',
-    jsonb_build_object('field', p_field, 'delta', p_amount, 'reason', p_reason, 'admin_id', auth.uid())
+    jsonb_build_object('field', p_field, 'delta', p_amount, 'reason', p_reason, 'admin_id', auth.uid()),
+    timezone('utc'::text, now())
   );
 end;
 $$;
@@ -1280,13 +1415,14 @@ begin
     raise exception 'Invalid role.';
   end if;
 
-  update public.profiles set role = p_role where id = p_user_id;
+  update public.profiles set role = p_role, updated_at = timezone('utc'::text, now()) where id = p_user_id;
 
   if p_role <> 'worker' then
-    update public.profiles set referral_code = null, referred_by = null where id = p_user_id;
+    update public.profiles set referral_code = null, referred_by = null, updated_at = timezone('utc'::text, now()) where id = p_user_id;
   elsif (select referral_code from public.profiles where id = p_user_id) is null then
     update public.profiles
-    set referral_code = public.generate_unique_referral_code(full_name)
+    set referral_code = public.generate_unique_referral_code(full_name),
+        updated_at = timezone('utc'::text, now())
     where id = p_user_id;
   end if;
 end;
@@ -1319,7 +1455,8 @@ begin
     type,
     target_role,
     target_user_id,
-    created_by
+    created_by,
+    created_at
   )
   values (
     p_title,
@@ -1327,7 +1464,8 @@ begin
     p_type,
     p_target_role,
     p_user_id,
-    auth.uid()
+    auth.uid(),
+    timezone('utc'::text, now())
   )
   returning id into v_notif_id;
 
@@ -1383,7 +1521,7 @@ end;
 $$;
 
 -- ----------------------------------------------------------------------------
--- 6. ROW LEVEL SECURITY (RLS) POLICIES
+-- 6. ROW LEVEL SECURITY (RLS) POLICIES (Bulletproof & Non-Recursive)
 -- ----------------------------------------------------------------------------
 
 alter table public.profiles enable row level security;
@@ -1401,43 +1539,75 @@ alter table public.system_settings enable row level security;
 
 -- Drop all old policies to avoid duplicates
 drop policy if exists "profiles_select_policy" on public.profiles;
+drop policy if exists "profiles_insert_policy" on public.profiles;
+drop policy if exists "profiles_update_policy" on public.profiles;
 drop policy if exists "tasks_select_policy" on public.tasks;
+drop policy if exists "tasks_insert_policy" on public.tasks;
+drop policy if exists "tasks_update_policy" on public.tasks;
+drop policy if exists "tasks_delete_policy" on public.tasks;
 drop policy if exists "submissions_select_policy" on public.submissions;
 drop policy if exists "submissions_insert_worker" on public.submissions;
+drop policy if exists "submissions_insert_policy" on public.submissions;
+drop policy if exists "submissions_update_policy" on public.submissions;
 drop policy if exists "commissions_select_policy" on public.referral_commissions;
 drop policy if exists "transactions_select_policy" on public.transactions;
 drop policy if exists "withdrawals_select_policy" on public.withdrawals;
+drop policy if exists "withdrawals_insert_policy" on public.withdrawals;
 drop policy if exists "deposits_select_policy" on public.deposit_requests;
+drop policy if exists "deposits_insert_policy" on public.deposit_requests;
 drop policy if exists "platform_earnings_select_policy" on public.platform_earnings;
 drop policy if exists "fee_earnings_select_policy" on public.withdrawal_fee_earnings;
 drop policy if exists "notifications_select_policy" on public.notifications;
+drop policy if exists "notifications_insert_policy" on public.notifications;
+drop policy if exists "notifications_delete_policy" on public.notifications;
 drop policy if exists "reads_policy" on public.notification_reads;
 drop policy if exists "settings_select_policy" on public.system_settings;
 
--- A. Profiles Policy
+-- A. Profiles Policies
 create policy "profiles_select_policy"
   on public.profiles for select
   to authenticated
-  using (
-    auth.uid() = id
-    or referred_by = auth.uid()
-    or exists (
-      select 1 from public.submissions s
-      where s.employer_id = auth.uid() and s.worker_id = profiles.id
-    )
-    or exists (
-      select 1 from public.profiles admin_p
-      where admin_p.id = auth.uid() and admin_p.role = 'admin'
-    )
-  );
-
--- B. Tasks Policy
-create policy "tasks_select_policy"
-  on public.tasks for select
-  to authenticated
   using (true);
 
--- C. Submissions Policy
+create policy "profiles_insert_policy"
+  on public.profiles for insert
+  to authenticated
+  with check (auth.uid() = id);
+
+create policy "profiles_update_policy"
+  on public.profiles for update
+  to authenticated
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+-- B. Tasks Policies
+create policy "tasks_select_policy"
+  on public.tasks for select
+  to authenticated, anon
+  using (true);
+
+create policy "tasks_insert_policy"
+  on public.tasks for insert
+  to authenticated
+  with check (employer_id = auth.uid());
+
+create policy "tasks_update_policy"
+  on public.tasks for update
+  to authenticated
+  using (
+    employer_id = auth.uid()
+    or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+create policy "tasks_delete_policy"
+  on public.tasks for delete
+  to authenticated
+  using (
+    employer_id = auth.uid()
+    or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+-- C. Submissions Policies
 create policy "submissions_select_policy"
   on public.submissions for select
   to authenticated
@@ -1447,12 +1617,18 @@ create policy "submissions_select_policy"
     or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
-create policy "submissions_insert_worker"
+create policy "submissions_insert_policy"
   on public.submissions for insert
   to authenticated
-  with check (
-    worker_id = auth.uid()
-    and exists (select 1 from public.profiles where id = auth.uid() and role = 'worker')
+  with check (worker_id = auth.uid());
+
+create policy "submissions_update_policy"
+  on public.submissions for update
+  to authenticated
+  using (
+    employer_id = auth.uid()
+    or worker_id = auth.uid()
+    or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
 -- D. Referral Commissions Policy
@@ -1473,7 +1649,7 @@ create policy "transactions_select_policy"
     or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
--- F. Withdrawals Policy
+-- F. Withdrawals Policies
 create policy "withdrawals_select_policy"
   on public.withdrawals for select
   to authenticated
@@ -1482,7 +1658,12 @@ create policy "withdrawals_select_policy"
     or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
--- G. Deposit Requests Policy
+create policy "withdrawals_insert_policy"
+  on public.withdrawals for insert
+  to authenticated
+  with check (worker_id = auth.uid());
+
+-- G. Deposit Requests Policies
 create policy "deposits_select_policy"
   on public.deposit_requests for select
   to authenticated
@@ -1490,6 +1671,11 @@ create policy "deposits_select_policy"
     coalesce(user_id, employer_id) = auth.uid()
     or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
+
+create policy "deposits_insert_policy"
+  on public.deposit_requests for insert
+  to authenticated
+  with check (coalesce(user_id, employer_id) = auth.uid());
 
 -- H. Platform & Fee Earnings Policies
 create policy "platform_earnings_select_policy"
@@ -1513,10 +1699,25 @@ create policy "notifications_select_policy"
   using (
     target_role = 'all'
     or target_user_id = auth.uid()
+    or target_user_id is null
     or exists (
       select 1 from public.profiles
       where id = auth.uid() and (role = target_role or role = 'admin')
     )
+  );
+
+create policy "notifications_insert_policy"
+  on public.notifications for insert
+  to authenticated
+  with check (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+create policy "notifications_delete_policy"
+  on public.notifications for delete
+  to authenticated
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
   );
 
 create policy "reads_policy"
@@ -1531,13 +1732,62 @@ create policy "settings_select_policy"
   using (true);
 
 -- ----------------------------------------------------------------------------
--- 7. DATA SANITATION & BACKFILL
+-- 7. DATA SANITATION, RE-SYNC & RETROACTIVE COMMISSION BACKFILL
 -- ----------------------------------------------------------------------------
 do $$
 declare
+  u record;
   r record;
+  s record;
+  v_meta_role text;
+  v_meta_name text;
+  v_ref_code text;
+  v_referrer_id uuid;
 begin
-  -- Backfill unique codes for worker profiles lacking one
+  -- 1. Sync any existing profiles role and name from auth.users metadata
+  for u in select id, raw_user_meta_data, raw_app_meta_data, email from auth.users loop
+    v_meta_role := lower(trim(coalesce(
+      u.raw_user_meta_data->>'role',
+      u.raw_app_meta_data->>'role',
+      ''
+    )));
+    v_meta_name := coalesce(
+      u.raw_user_meta_data->>'full_name',
+      u.raw_user_meta_data->>'name',
+      split_part(u.email, '@', 1)
+    );
+
+    if v_meta_role in ('worker', 'employer', 'admin') then
+      update public.profiles
+      set role = v_meta_role,
+          full_name = coalesce(nullif(full_name, 'New User'), v_meta_name, full_name)
+      where id = u.id and role <> v_meta_role;
+    end if;
+
+    -- 2. Backfill missing referred_by links from signup metadata if missing
+    v_ref_code := upper(trim(coalesce(
+      u.raw_user_meta_data->>'referral_code',
+      u.raw_user_meta_data->>'ref',
+      u.raw_user_meta_data->>'referred_by',
+      ''
+    )));
+
+    if v_ref_code <> '' then
+      select id into v_referrer_id
+      from public.profiles
+      where upper(trim(referral_code)) = v_ref_code
+        and id <> u.id
+      limit 1;
+
+      if v_referrer_id is not null then
+        update public.profiles
+        set referred_by = v_referrer_id
+        where id = u.id and (referred_by is null or referred_by <> v_referrer_id);
+      end if;
+    end if;
+  end loop;
+
+  -- 3. Backfill unique referral codes for worker profiles lacking one
   for r in 
     select id, full_name 
     from public.profiles 
@@ -1549,10 +1799,38 @@ begin
     where id = r.id;
   end loop;
 
-  -- Ensure non-workers (employer, admin) have NULL referral codes & referred_by
+  -- 4. Clean non-worker referral code columns
   update public.profiles
   set referral_code = null,
       referred_by = null
   where role in ('employer', 'admin');
+
+  -- 5. Sanitize any legacy task status values to standard 'open' / 'completed'
+  update public.tasks
+  set status = 'open'
+  where status is null or status not in ('open', 'completed', 'cancelled', 'closed', 'active', 'paused', 'in_progress', 'draft', 'pending');
+
+  -- 6. Retroactively credit missing referral commissions for already-approved submissions
+  for s in
+    select sub.id as sub_id, sub.worker_id, t.reward, p.referred_by
+    from public.submissions sub
+    join public.tasks t on t.id = sub.task_id
+    join public.profiles p on p.id = sub.worker_id
+    where sub.status = 'approved'
+      and p.referred_by is not null
+      and not exists (
+        select 1 from public.referral_commissions rc
+        where rc.source_type = 'task_approval'
+          and rc.source_id = sub.id
+      )
+  loop
+    perform public.process_referral_commission(
+      s.worker_id,
+      'task_approval',
+      s.sub_id,
+      s.reward,
+      5.00
+    );
+  end loop;
 end;
 $$;

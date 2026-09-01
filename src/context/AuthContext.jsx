@@ -29,7 +29,41 @@ export function AuthProvider({ children }) {
       if (!error && data) {
         setProfile(data)
       } else {
-        setProfile(null)
+        // Fallback: If trigger was delayed or profile row is missing, check auth user metadata
+        const { data: userData } = await supabase.auth.getUser()
+        const user = userData?.user
+        if (user && user.id === userId) {
+          const rawRole = user.user_metadata?.role || user.app_metadata?.role || 'worker'
+          const cleanRole = ['worker', 'employer', 'admin'].includes(rawRole) ? rawRole : 'worker'
+          const rawName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+          
+          // Attempt upsert fallback
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              full_name: rawName,
+              role: cleanRole,
+            })
+            .select()
+            .single()
+
+          if (newProfile) {
+            setProfile(newProfile)
+          } else {
+            setProfile({
+              id: userId,
+              full_name: rawName,
+              role: cleanRole,
+              earnings: 0,
+              pending: 0,
+              spent: 0,
+              deposited: 0,
+            })
+          }
+        } else {
+          setProfile(null)
+        }
       }
     } catch (err) {
       console.error('Error loading profile:', err)
