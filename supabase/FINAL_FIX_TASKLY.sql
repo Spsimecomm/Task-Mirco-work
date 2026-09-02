@@ -386,11 +386,14 @@ create index if not exists idx_withdrawals_status on public.withdrawals(status);
 create index if not exists idx_notifications_user_id on public.notifications(user_id);
 create index if not exists idx_notifications_created_at on public.notifications(created_at desc);
 
--- ----------------------------------------------------------------------------
+-- -- ----------------------------------------------------------------------------
 -- 5. BUSINESS LOGIC & RPC FUNCTIONS
 -- ----------------------------------------------------------------------------
 
 -- A. Referral Code Generator for Workers
+drop function if exists public.generate_unique_referral_code(text) cascade;
+drop function if exists public.generate_unique_referral_code() cascade;
+
 create or replace function public.generate_unique_referral_code(p_full_name text default null)
 returns text
 language plpgsql
@@ -421,6 +424,8 @@ end;
 $$;
 
 -- B. Handle User Registration (Strict Role Preservation from Metadata)
+drop function if exists public.handle_new_user() cascade;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -509,11 +514,12 @@ create trigger on_auth_user_created
 
 -- Drop previous conflicting submission trigger to prevent double payout bugs
 drop trigger if exists trg_submission_status_change on public.submissions;
-drop function if exists public.handle_submission_status_change();
+drop function if exists public.handle_submission_status_change() cascade;
 
 -- C. 5% Referral Commission Calculation Engine (Idempotent & Worker-Only)
-drop function if exists public.process_referral_commission(uuid, text, uuid, numeric, numeric);
-drop function if exists public.process_referral_commission(uuid, text, uuid, numeric);
+drop function if exists public.process_referral_commission(uuid, text, uuid, numeric, numeric) cascade;
+drop function if exists public.process_referral_commission(uuid, text, uuid, numeric) cascade;
+drop function if exists public.process_referral_commission cascade;
 
 create or replace function public.process_referral_commission(
   p_referred_id uuid,
@@ -624,6 +630,12 @@ end;
 $$;
 
 -- D. Create Task with Escrow Funding (Deducts Deposited, Adds to Pending Escrow)
+drop function if exists public.create_task_with_funding(text, text, text, text, numeric, int, int, int) cascade;
+drop function if exists public.create_task_with_funding(text, text, text, text, numeric, int, int) cascade;
+drop function if exists public.create_task_with_funding(text, text, text, text, numeric, int) cascade;
+drop function if exists public.create_task_with_funding(text, text, text, text, numeric) cascade;
+drop function if exists public.create_task_with_funding cascade;
+
 create or replace function public.create_task_with_funding(
   p_title text,
   p_category text,
@@ -693,6 +705,10 @@ end;
 $$;
 
 -- E. Task Proof Submission
+drop function if exists public.submit_task_proof(uuid, text, text) cascade;
+drop function if exists public.submit_task_proof(uuid, text) cascade;
+drop function if exists public.submit_task_proof cascade;
+
 create or replace function public.submit_task_proof(
   p_task_id uuid,
   p_proof_text text,
@@ -757,6 +773,11 @@ end;
 $$;
 
 -- F. Approve Submission & Payout (Atomic Single-Path Execution)
+drop function if exists public.approve_submission(uuid) cascade;
+drop function if exists public.approve_submission_and_pay(uuid) cascade;
+drop function if exists public.approve_submission cascade;
+drop function if exists public.approve_submission_and_pay cascade;
+
 create or replace function public.approve_submission(p_submission_id uuid)
 returns void
 language plpgsql
@@ -843,6 +864,13 @@ begin perform public.approve_submission(p_submission_id); end;
 $$;
 
 -- G. Reject Submission & Refund Employer Escrow
+drop function if exists public.reject_submission(uuid, text) cascade;
+drop function if exists public.reject_submission(uuid) cascade;
+drop function if exists public.reject_submission_and_refund(uuid, text) cascade;
+drop function if exists public.reject_submission_and_refund(uuid) cascade;
+drop function if exists public.reject_submission cascade;
+drop function if exists public.reject_submission_and_refund cascade;
+
 create or replace function public.reject_submission(p_submission_id uuid, p_reason text default 'Rejected by employer')
 returns void
 language plpgsql
@@ -918,6 +946,15 @@ begin perform public.reject_submission(p_submission_id, p_reason); end;
 $$;
 
 -- H. Deposit Request & Admin Review RPCs
+drop function if exists public.request_deposit(numeric, text, text, text) cascade;
+drop function if exists public.request_deposit(numeric, text, text) cascade;
+drop function if exists public.request_deposit cascade;
+drop function if exists public.admin_approve_deposit(uuid) cascade;
+drop function if exists public.admin_approve_deposit cascade;
+drop function if exists public.admin_reject_deposit(uuid, text) cascade;
+drop function if exists public.admin_reject_deposit(uuid) cascade;
+drop function if exists public.admin_reject_deposit cascade;
+
 create or replace function public.request_deposit(p_amount numeric, p_method text, p_sender_mobile text, p_trx_id text)
 returns uuid
 language plpgsql security definer set search_path = public
@@ -1056,6 +1093,15 @@ begin
 end; $$;
 
 -- I. Withdrawal Request & Admin Review RPCs
+drop function if exists public.request_withdrawal(numeric, text, text) cascade;
+drop function if exists public.request_withdrawal(numeric, text) cascade;
+drop function if exists public.request_withdrawal cascade;
+drop function if exists public.admin_approve_withdrawal(uuid) cascade;
+drop function if exists public.admin_approve_withdrawal cascade;
+drop function if exists public.admin_reject_withdrawal(uuid, text) cascade;
+drop function if exists public.admin_reject_withdrawal(uuid) cascade;
+drop function if exists public.admin_reject_withdrawal cascade;
+
 create or replace function public.request_withdrawal(p_amount numeric, p_method text, p_account_details text)
 returns uuid language plpgsql security definer set search_path = public
 as $$
@@ -1174,6 +1220,20 @@ begin
 end; $$;
 
 -- J. Notifications & System Settings RPCs
+drop function if exists public.admin_send_notification(text, text, text, text, uuid) cascade;
+drop function if exists public.admin_send_notification(text, text, text, text) cascade;
+drop function if exists public.admin_send_notification cascade;
+drop function if exists public.admin_delete_notification(uuid) cascade;
+drop function if exists public.admin_delete_notification cascade;
+drop function if exists public.mark_notification_as_read(uuid) cascade;
+drop function if exists public.mark_notification_as_read cascade;
+drop function if exists public.mark_all_notifications_as_read() cascade;
+drop function if exists public.mark_all_notifications_as_read cascade;
+drop function if exists public.admin_update_system_setting(text, text) cascade;
+drop function if exists public.admin_update_system_setting cascade;
+drop function if exists public.is_admin() cascade;
+drop function if exists public.is_admin cascade;
+
 create or replace function public.admin_send_notification(p_title text, p_message text, p_type text default 'announcement', p_target_role text default 'all', p_user_id uuid default null)
 returns uuid language plpgsql security definer set search_path = public
 as $$
