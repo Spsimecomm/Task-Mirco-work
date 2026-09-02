@@ -16,13 +16,23 @@ export default function ReviewSubmissions() {
 
   const load = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase
-      .from('submissions')
-      .select('id, status, proof_text, proof_url, rejection_reason, created_at, worker_name, tasks ( title, category, reward )')
-      .eq('employer_id', user.id)
-      .order('created_at', { ascending: false })
-    setSubmissions(data || [])
-    setLoading(false)
+    setLoading(true)
+    setError('')
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('submissions')
+        .select('id, status, proof_text, proof_url, rejection_reason, created_at, worker_name, tasks ( title, category, reward )')
+        .eq('employer_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (fetchErr) throw fetchErr
+      setSubmissions(data || [])
+    } catch (err) {
+      console.error('Error fetching submissions for review:', err)
+      setError(err.message || 'Failed to load task submissions from database. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {
@@ -120,7 +130,7 @@ export default function ReviewSubmissions() {
         </div>
       </div>
 
-      <ErrorBanner message={error} />
+      <ErrorBanner message={error} onRetry={load} />
 
       {loading ? (
         <div className="text-sm text-[#64748B] dark:text-slate-400 py-16 text-center">Loading…</div>

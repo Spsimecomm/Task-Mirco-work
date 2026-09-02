@@ -37,11 +37,16 @@ export default function Deposit() {
   const [requests, setRequests] = useState([])
 
   const loadRequests = useCallback(async () => {
-    const { data } = await supabase
-      .from('deposit_requests')
-      .select('*')
-      .order('created_at', { ascending: false })
-    setRequests(data || [])
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('deposit_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (fetchErr) throw fetchErr
+      setRequests(data || [])
+    } catch (err) {
+      console.error('Error loading deposit requests:', err)
+    }
   }, [])
 
   useEffect(() => {

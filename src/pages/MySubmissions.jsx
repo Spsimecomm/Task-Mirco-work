@@ -1,24 +1,35 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { StatusBadge, EmptyState, isSafeUrl } from '../components/Shared'
+import { StatusBadge, EmptyState, ErrorBanner, isSafeUrl } from '../components/Shared'
 import { ClipboardCheck, ExternalLink, AlertCircle } from 'lucide-react'
 
 export default function MySubmissions() {
   const { user } = useAuth()
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
 
   const load = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase
-      .from('submissions')
-      .select('id, status, proof_text, proof_url, rejection_reason, created_at, tasks ( title, category, reward )')
-      .eq('worker_id', user.id)
-      .order('created_at', { ascending: false })
-    setSubmissions(data || [])
-    setLoading(false)
+    setLoading(true)
+    setError('')
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('submissions')
+        .select('id, status, proof_text, proof_url, rejection_reason, created_at, tasks ( title, category, reward )')
+        .eq('worker_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (fetchErr) throw fetchErr
+      setSubmissions(data || [])
+    } catch (err) {
+      console.error('Error loading submissions:', err)
+      setError(err.message || 'Failed to load your submissions from database. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {
@@ -83,6 +94,9 @@ export default function MySubmissions() {
           })}
         </div>
       </div>
+
+      {/* Database Error Banner with Retry */}
+      <ErrorBanner message={error} onRetry={load} />
 
       {loading ? (
         <div className="text-sm text-[#64748B] dark:text-slate-400 py-16 text-center">Loading…</div>

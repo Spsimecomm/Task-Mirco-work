@@ -15,23 +15,34 @@ import { useAuth } from '../context/AuthContext'
 import StatCard from '../components/StatCard'
 import QuickActionsGrid from '../components/QuickActionsGrid'
 import TopCategories from '../components/TopCategories'
-import { StatusBadge, EmptyState } from '../components/Shared'
+import { StatusBadge, EmptyState, ErrorBanner } from '../components/Shared'
 
 export default function EmployerDashboard() {
   const { user, profile } = useAuth()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const loadTasks = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase
-      .from('tasks')
-      .select('id, title, category, reward, status, slots_total, slots_filled, created_at')
-      .eq('employer_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(6)
-    setTasks(data || [])
-    setLoading(false)
+    setLoading(true)
+    setError('')
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('tasks')
+        .select('id, title, category, reward, status, slots_total, slots_filled, created_at')
+        .eq('employer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(6)
+
+      if (fetchErr) throw fetchErr
+      setTasks(data || [])
+    } catch (err) {
+      console.error('Error fetching employer tasks:', err)
+      setError(err.message || 'Failed to load your campaigns from database. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => {
@@ -86,6 +97,9 @@ export default function EmployerDashboard() {
           <span>Post New Task</span>
         </Link>
       </div>
+
+      {/* Error Banner with Retry */}
+      <ErrorBanner message={error} onRetry={loadTasks} />
 
       {/* 4 Stat Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

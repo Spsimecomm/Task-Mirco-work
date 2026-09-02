@@ -1,5 +1,5 @@
 import React from 'react'
-import { Inbox } from 'lucide-react'
+import { Inbox, AlertCircle, RefreshCw } from 'lucide-react'
 
 const statusStyles = {
   pending: 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A] dark:bg-[#451A03] dark:text-[#FBBF24] dark:border-[#78350F]',
@@ -31,11 +31,24 @@ export function EmptyState({ title, subtitle, icon: Icon = Inbox, action }) {
   )
 }
 
-export function ErrorBanner({ message }) {
+export function ErrorBanner({ message, onRetry }) {
   if (!message) return null
   return (
-    <div className="rounded-xl border border-[#FECDD3] dark:border-rose-900/40 bg-[#FFE4E6] dark:bg-rose-950/40 px-4 py-3 text-sm text-[#9F1239] dark:text-rose-300 font-medium">
-      {message}
+    <div className="rounded-xl border border-[#FECDD3] dark:border-rose-900/40 bg-[#FFE4E6] dark:bg-rose-950/40 px-4 py-3 text-xs sm:text-sm text-[#9F1239] dark:text-rose-300 font-medium flex items-center justify-between gap-3 shadow-xs">
+      <div className="flex items-center gap-2">
+        <AlertCircle size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
+        <span className="leading-snug">{message}</span>
+      </div>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-rose-200/80 dark:bg-rose-900/60 text-[#9F1239] dark:text-rose-200 hover:bg-rose-300 dark:hover:bg-rose-800 transition cursor-pointer"
+        >
+          <RefreshCw size={12} />
+          <span>Retry</span>
+        </button>
+      )}
     </div>
   )
 }

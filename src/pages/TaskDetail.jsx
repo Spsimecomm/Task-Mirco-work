@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -55,21 +55,39 @@ export default function TaskDetail() {
   const [done, setDone] = useState(false)
   const [alreadyApplied, setAlreadyApplied] = useState(false)
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.from('tasks').select('*').eq('id', id).single()
+  const [loadError, setLoadError] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const { data, error: taskErr } = await supabase.from('tasks').select('*').eq('id', id).maybeSingle()
+      if (taskErr) throw taskErr
       setTask(data)
-      const { data: existing } = await supabase
-        .from('submissions')
-        .select('id')
-        .eq('task_id', id)
-        .eq('worker_id', user.id)
-        .maybeSingle()
-      setAlreadyApplied(!!existing)
+
+      if (user && data) {
+        const { data: existing, error: existErr } = await supabase
+          .from('submissions')
+          .select('id')
+          .eq('task_id', id)
+          .eq('worker_id', user.id)
+          .maybeSingle()
+
+        if (!existErr && existing) {
+          setAlreadyApplied(true)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading task details:', err)
+      setLoadError(err.message || 'Failed to load task details from database.')
+    } finally {
       setLoading(false)
     }
-    load()
   }, [id, user])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -144,13 +162,47 @@ export default function TaskDetail() {
   }
 
   if (loading) {
-    return <div className="p-16 text-center text-sm text-slate-500 dark:text-slate-400">Loading task…</div>
+    return (
+      <div className="p-16 text-center text-sm text-slate-500 dark:text-slate-400">
+        Loading task…
+      </div>
+    )
+  }
+  if (loadError) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 space-y-4">
+        <ErrorBanner message={loadError} onRetry={load} />
+        <div className="text-center">
+          <button
+            onClick={() => (role === 'worker' ? navigate('/marketplace') : navigate('/dashboard'))}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-brand-primary hover:underline"
+          >
+            <ArrowLeft size={14} />
+            <span>Return to {role === 'worker' ? 'Marketplace' : 'Dashboard'}</span>
+          </button>
+        </div>
+      </div>
+    )
   }
   if (!task) {
-    return <div className="p-16 text-center text-sm text-slate-500 dark:text-slate-400">Task not found.</div>
+    return (
+      <div className="max-w-2xl mx-auto py-12 space-y-4 text-center">
+        <div className="text-slate-500 dark:text-slate-400 text-sm">
+          Task not found or is no longer available.
+        </div>
+        <button
+          onClick={() => (role === 'worker' ? navigate('/marketplace') : navigate('/dashboard'))}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-brand-primary hover:underline"
+        >
+          <ArrowLeft size={14} />
+          <span>Return to {role === 'worker' ? 'Marketplace' : 'Dashboard'}</span>
+        </button>
+      </div>
+    )
   }
 
-  const slotsLeft = task.slots_total - task.slots_filled
+  const isTaskClosed = task.status !== 'open'
+  const slotsLeft = (task.slots_total ?? 1) - (task.slots_filled ?? 0)
   const isFull = slotsLeft <= 0
   const config = categoryConfig[task.category] || {
     icon: Tag,
@@ -281,6 +333,10 @@ export default function TaskDetail() {
           <Link to="/my-submissions" className="text-brand-primary font-bold hover:underline">
             Check your submission status in My Submissions →
           </Link>
+        </div>
+      ) : isTaskClosed ? (
+        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 text-center text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 shadow-sm">
+          This task status is <span className="font-bold text-[#1E293B] dark:text-slate-200 capitalize">{task.status}</span>. It is no longer open for new submissions.
         </div>
       ) : isFull ? (
         <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 text-center text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 shadow-sm">

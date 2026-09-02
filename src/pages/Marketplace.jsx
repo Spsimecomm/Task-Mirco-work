@@ -1,26 +1,37 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { Search, ArrowUpDown, Filter, Sparkles } from 'lucide-react'
+import { Search, ArrowUpDown, Filter, Sparkles, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import TaskCard from '../components/TaskCard'
-import { EmptyState } from '../components/Shared'
+import { EmptyState, ErrorBanner } from '../components/Shared'
 
 const CATEGORIES = ['All', 'Social Media', 'Sign Up', 'Video Watching', 'Data Entry']
 
 export default function Marketplace() {
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [sortBy, setSortBy] = useState('newest')
 
   const loadTasks = useCallback(async () => {
-    const { data } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('status', 'open')
-      .order('created_at', { ascending: false })
-    setTasks(data || [])
-    setLoading(false)
+    setLoading(true)
+    setError('')
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+
+      if (fetchErr) throw fetchErr
+      setTasks(data || [])
+    } catch (err) {
+      console.error('Error fetching marketplace tasks:', err)
+      setError(err.message || 'Failed to load available tasks from database. Please check your network.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -52,13 +63,14 @@ export default function Marketplace() {
 
   const filtered = useMemo(() => {
     let result = tasks.filter((t) => {
+      const isOpen = t.status === 'open'
       const matchesCategory = category === 'All' || t.category === category
       const matchesQuery =
         !query ||
-        t.title.toLowerCase().includes(query.toLowerCase()) ||
-        t.description.toLowerCase().includes(query.toLowerCase())
-      const hasSlots = t.slots_filled < t.slots_total
-      return matchesCategory && matchesQuery && hasSlots
+        t.title?.toLowerCase().includes(query.toLowerCase()) ||
+        t.description?.toLowerCase().includes(query.toLowerCase())
+      const hasSlots = (t.slots_filled ?? 0) < (t.slots_total ?? 1)
+      return isOpen && matchesCategory && matchesQuery && hasSlots
     })
 
     if (sortBy === 'reward_high') {
@@ -94,6 +106,9 @@ export default function Marketplace() {
           </span>
         </div>
       </div>
+
+      {/* Database Error Banner with Retry */}
+      <ErrorBanner message={error} onRetry={loadTasks} />
 
       {/* Filter and Search Bar Row */}
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">

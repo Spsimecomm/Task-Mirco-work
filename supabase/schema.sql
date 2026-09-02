@@ -1281,11 +1281,22 @@ create policy "profiles_insert_policy" on public.profiles for insert to authenti
 drop policy if exists "profiles_update_policy" on public.profiles;
 create policy "profiles_update_policy" on public.profiles for update to authenticated using (auth.uid() = id or public.is_admin()) with check (auth.uid() = id or public.is_admin());
 
--- Tasks: Marketplace and Dashboards can select tasks without RLS locks
+-- Tasks: Strict Role Scoping (Workers see 'open' tasks or submitted tasks, Employers see their own, Admins see all)
 drop policy if exists "tasks_select_secure" on public.tasks;
 drop policy if exists "tasks_select_policy" on public.tasks;
 drop policy if exists "tasks_select_all" on public.tasks;
-create policy "tasks_select_all" on public.tasks for select to authenticated, anon using (true);
+create policy "tasks_select_secure" on public.tasks for select to authenticated, anon
+using (
+  status = 'open'
+  or employer_id = auth.uid()
+  or user_id = auth.uid()
+  or exists (
+    select 1 from public.submissions
+    where submissions.task_id = tasks.id
+      and (submissions.worker_id = auth.uid() or submissions.user_id = auth.uid())
+  )
+  or public.is_admin()
+);
 
 drop policy if exists "tasks_insert_policy" on public.tasks;
 create policy "tasks_insert_policy" on public.tasks for insert to authenticated with check (employer_id = auth.uid() or public.is_admin());

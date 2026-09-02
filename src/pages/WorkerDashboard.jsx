@@ -18,6 +18,7 @@ import TaskDonutChart from '../components/TaskDonutChart'
 import QuickActionsGrid from '../components/QuickActionsGrid'
 import TopCategories from '../components/TopCategories'
 import RecentActivityTimeline from '../components/RecentActivityTimeline'
+import { ErrorBanner } from '../components/Shared'
 
 export default function WorkerDashboard() {
   const { user, profile } = useAuth()
@@ -29,34 +30,44 @@ export default function WorkerDashboard() {
     rejected: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const loadSubmissions = useCallback(async () => {
     if (!user) return
-    const { data } = await supabase
-      .from('submissions')
-      .select('id, status, created_at, proof_text, tasks ( id, title, reward, category )')
-      .eq('worker_id', user.id)
-      .order('created_at', { ascending: false })
+    setLoading(true)
+    setError('')
+    try {
+      const { data, error: fetchErr } = await supabase
+        .from('submissions')
+        .select('id, status, created_at, proof_text, tasks ( id, title, reward, category )')
+        .eq('worker_id', user.id)
+        .order('created_at', { ascending: false })
 
-    const list = data || []
-    setSubmissions(list)
+      if (fetchErr) throw fetchErr
 
-    // Calculate submission statistics
-    const counts = {
-      completed: list.filter((s) => s.status === 'approved').length,
-      pending: list.filter((s) => s.status === 'pending').length,
-      approved: list.filter((s) => s.status === 'approved').length,
-      rejected: list.filter((s) => s.status === 'rejected').length,
+      const list = data || []
+      setSubmissions(list)
+
+      // Calculate submission statistics
+      const counts = {
+        completed: list.filter((s) => s.status === 'approved').length,
+        pending: list.filter((s) => s.status === 'pending').length,
+        approved: list.filter((s) => s.status === 'approved').length,
+        rejected: list.filter((s) => s.status === 'rejected').length,
+      }
+
+      // Default to at least realistic demo numbers if fresh user with zero items
+      if (list.length === 0) {
+        setStats({ completed: 5, pending: 0, approved: 0, rejected: 0 })
+      } else {
+        setStats(counts)
+      }
+    } catch (err) {
+      console.error('Error fetching worker submissions:', err)
+      setError(err.message || 'Failed to load your submissions from database. Please try again.')
+    } finally {
+      setLoading(false)
     }
-
-    // Default to at least realistic demo numbers if fresh user with zero items
-    if (list.length === 0) {
-      setStats({ completed: 5, pending: 0, approved: 0, rejected: 0 })
-    } else {
-      setStats(counts)
-    }
-
-    setLoading(false)
   }, [user])
 
   useEffect(() => {
@@ -142,6 +153,9 @@ export default function WorkerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Database Error Banner with Retry */}
+      <ErrorBanner message={error} onRetry={loadSubmissions} />
 
       {/* 2. Four Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
