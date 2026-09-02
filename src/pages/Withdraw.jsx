@@ -20,7 +20,6 @@ const METHODS = [
 ]
 
 const MIN_WITHDRAWAL = 2
-const WITHDRAWAL_FEE_RATE = 0.02
 
 export default function Withdraw() {
   const { profile, refreshProfile } = useAuth()
@@ -31,26 +30,50 @@ export default function Withdraw() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [requests, setRequests] = useState([])
+  const [feeRatePct, setFeeRatePct] = useState(2.0)
 
   const requestedAmount = Number(amount) || 0
-  const withdrawalFee = Math.round(requestedAmount * WITHDRAWAL_FEE_RATE * 100) / 100
+  const withdrawalFee = Math.round((requestedAmount * (feeRatePct / 100)) * 100) / 100
   const netAmount = Math.max(0, requestedAmount - withdrawalFee)
 
   const loadRequests = useCallback(async () => {
     try {
-      const { data, error: fetchErr } = await supabase
-        .from('withdrawals')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (fetchErr) throw fetchErr
-      setRequests(data || [])
+      const [wdRes, settingRes] = await Promise.all([
+        supabase.from('withdrawals').select('*').order('created_at', { ascending: false }),
+        supabase.from('system_settings').select('value').eq('key', 'withdrawal_fee_rate').maybeSingle(),
+      ])
+
+      if (wdRes.data) setRequests(wdRes.data)
+      if (settingRes.data?.value) {
+        const parsed = parseFloat(settingRes.data.value)
+        if (!isNaN(parsed) && parsed >= 0) setFeeRatePct(parsed)
+      }
     } catch (err) {
-      console.error('Error loading withdrawal requests:', err)
+      console.error('Error loading withdrawal requests or settings:', err)
     }
   }, [])
 
   useEffect(() => {
     loadRequests()
+
+    // Subscribe to system settings changes in realtime
+    const channel = supabase
+      ?.channel?.('system-settings-withdraw')
+      ?.on?.(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'system_settings' },
+        (payload) => {
+          if (payload?.new?.key === 'withdrawal_fee_rate') {
+            const parsed = parseFloat(payload.new.value)
+            if (!isNaN(parsed)) setFeeRatePct(parsed)
+          }
+        }
+      )
+      ?.subscribe?.()
+
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [loadRequests])
 
   const handleSubmit = async (e) => {
@@ -130,7 +153,7 @@ export default function Withdraw() {
               <span className="text-[#1E293B] dark:text-[#F1F5F9] font-bold">${requestedAmount.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-[#64748B] dark:text-slate-400">
-              <span>Fee ({(WITHDRAWAL_FEE_RATE * 100).toFixed(0)}%)</span>
+              <span>Fee ({feeRatePct.toFixed(feeRatePct % 1 === 0 ? 0 : 2)}%)</span>
               <span className="text-amber-600 dark:text-amber-400 font-bold">-${withdrawalFee.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-[#E2E8F0] dark:border-[#2A3348] pt-2 font-bold">

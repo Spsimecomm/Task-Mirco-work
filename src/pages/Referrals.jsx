@@ -148,6 +148,15 @@ export default function Referrals() {
         },
         () => loadReferralData()
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'system_settings',
+        },
+        () => loadReferralData()
+      )
       .subscribe()
 
     return () => {

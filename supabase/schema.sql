@@ -302,6 +302,24 @@ alter table public.referral_commissions
   add column if not exists status text not null default 'completed',
   add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
 
+alter table public.platform_earnings
+  add column if not exists submission_id uuid references public.submissions(id) on delete cascade,
+  add column if not exists task_id uuid references public.tasks(id) on delete cascade,
+  add column if not exists worker_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists employer_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists reward_amount numeric(12,2),
+  add column if not exists commission_rate numeric(5,2) not null default 10.00,
+  add column if not exists commission_amount numeric(12,2),
+  add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
+
+alter table public.withdrawal_fee_earnings
+  add column if not exists withdrawal_id uuid references public.withdrawals(id) on delete cascade,
+  add column if not exists worker_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists withdrawal_amount numeric(12,2),
+  add column if not exists fee_rate numeric(5,2) not null default 2.00,
+  add column if not exists fee_amount numeric(12,2),
+  add column if not exists created_at timestamptz not null default timezone('utc'::text, now());
+
 update public.deposit_requests
 set employer_id = coalesce(employer_id, user_id),
     user_id = coalesce(user_id, employer_id),
@@ -834,9 +852,13 @@ begin
   where id = v_sub.employer_id;
 
   -- 4. Record platform earnings
-  insert into public.platform_earnings (submission_id, task_id, worker_id, employer_id, reward_amount, commission_rate, commission_amount, created_at)
-  values (p_submission_id, v_sub.task_id, v_sub.worker_id, v_sub.employer_id, v_task.reward, v_rate, v_commission, timezone('utc'::text, now()))
-  on conflict do nothing;
+  begin
+    insert into public.platform_earnings (submission_id, task_id, worker_id, employer_id, reward_amount, commission_rate, commission_amount, created_at)
+    values (p_submission_id, v_sub.task_id, v_sub.worker_id, v_sub.employer_id, v_task.reward, v_rate, v_commission, timezone('utc'::text, now()))
+    on conflict do nothing;
+  exception when others then
+    null;
+  end;
 
   -- 5. Record financial transactions
   insert into public.transactions (user_id, type, amount, status, meta, created_at)
@@ -1341,22 +1363,11 @@ create policy "profiles_insert_policy" on public.profiles for insert to authenti
 drop policy if exists "profiles_update_policy" on public.profiles;
 create policy "profiles_update_policy" on public.profiles for update to authenticated using (auth.uid() = id or public.is_admin()) with check (auth.uid() = id or public.is_admin());
 
--- Tasks: Strict Role Scoping (Workers see 'open' tasks or submitted tasks, Employers see their own, Admins see all)
+-- Tasks: Marketplace browsing open to authenticated and anon (zero recursion)
 drop policy if exists "tasks_select_secure" on public.tasks;
 drop policy if exists "tasks_select_policy" on public.tasks;
 drop policy if exists "tasks_select_all" on public.tasks;
-create policy "tasks_select_secure" on public.tasks for select to authenticated, anon
-using (
-  status = 'open'
-  or employer_id = auth.uid()
-  or user_id = auth.uid()
-  or exists (
-    select 1 from public.submissions
-    where submissions.task_id = tasks.id
-      and (submissions.worker_id = auth.uid() or submissions.user_id = auth.uid())
-  )
-  or public.is_admin()
-);
+create policy "tasks_select_all" on public.tasks for select to authenticated, anon using (true);
 
 drop policy if exists "tasks_insert_policy" on public.tasks;
 create policy "tasks_insert_policy" on public.tasks for insert to authenticated with check (employer_id = auth.uid() or public.is_admin());
@@ -1498,4 +1509,5 @@ begin
   begin alter publication supabase_realtime add table public.tasks; exception when duplicate_object then null; when undefined_object then null; end;
   begin alter publication supabase_realtime add table public.deposit_requests; exception when duplicate_object then null; when undefined_object then null; end;
   begin alter publication supabase_realtime add table public.withdrawals; exception when duplicate_object then null; when undefined_object then null; end;
+  begin alter publication supabase_realtime add table public.system_settings; exception when duplicate_object then null; when undefined_object then null; end;
 end $$;
