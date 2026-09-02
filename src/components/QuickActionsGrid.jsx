@@ -1,9 +1,32 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Store, ClipboardCheck, ArrowUpRight, PlusCircle, Briefcase, CreditCard, Gift } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 export default function QuickActionsGrid({ role = 'worker' }) {
   const isEmployer = role === 'employer'
+  const [referralRate, setReferralRate] = useState('5%')
+
+  useEffect(() => {
+    async function loadRate() {
+      try {
+        const { data } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'referral_commission_rate')
+          .maybeSingle()
+        if (data?.value) {
+          const num = parseFloat(data.value)
+          if (!isNaN(num) && num > 0) {
+            setReferralRate(num % 1 === 0 ? `${num}%` : `${num.toFixed(1)}%`)
+          }
+        }
+      } catch (e) {
+        // fallback
+      }
+    }
+    loadRate()
+  }, [])
 
   const workerActions = [
     {
@@ -30,7 +53,7 @@ export default function QuickActionsGrid({ role = 'worker' }) {
     {
       to: '/referrals',
       title: 'Refer & Earn',
-      desc: '5% lifetime commission',
+      desc: `${referralRate} lifetime commission`,
       icon: Gift,
       color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
@@ -61,7 +84,7 @@ export default function QuickActionsGrid({ role = 'worker' }) {
     {
       to: '/referrals',
       title: 'Refer & Earn',
-      desc: '5% lifetime commission',
+      desc: `${referralRate} lifetime commission`,
       icon: Gift,
       color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
