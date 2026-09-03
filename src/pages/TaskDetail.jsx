@@ -204,6 +204,7 @@ export default function TaskDetail() {
   const isTaskClosed = task.status !== 'open'
   const slotsLeft = (task.slots_total ?? 1) - (task.slots_filled ?? 0)
   const isFull = slotsLeft <= 0
+  const isBengaliTitle = /[\u0980-\u09FF]/.test(task.title || '')
   const config = categoryConfig[task.category] || {
     icon: Tag,
     badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
@@ -214,40 +215,46 @@ export default function TaskDetail() {
     <div className="space-y-6 animate-in fade-in duration-300 max-w-4xl mx-auto">
       <button
         onClick={() => (role === 'worker' ? navigate('/marketplace') : navigate('/dashboard'))}
-        className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#64748B] dark:text-slate-400 hover:text-[#1E293B] dark:hover:text-white transition"
+        className="inline-flex items-center gap-2 font-sans font-normal text-xs sm:text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition"
       >
         <ArrowLeft size={16} />
         <span>{role === 'worker' ? 'Back to marketplace' : 'Back to dashboard'}</span>
       </button>
 
       {/* Main Task Header & Details Card */}
-      <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 sm:p-8 space-y-6 shadow-sm">
+      <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-5 sm:p-7 space-y-6 shadow-sm">
         {/* Top bar: Category Badge & Reward */}
         <div className="flex items-center justify-between gap-3">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold border ${config.badge}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 font-sans text-xs font-semibold border ${config.badge}`}
           >
             <CategoryIcon size={13} className="shrink-0" />
             <span>{task.category}</span>
           </span>
           <div className="text-right">
-            <span className="text-2xl sm:text-3xl font-display font-extrabold text-emerald-600 dark:text-brand-primary leading-none tracking-tight">
+            <span className="font-sans font-bold text-xl sm:text-2xl text-emerald-600 dark:text-brand-primary leading-none tracking-tight">
               ${Number(task.reward).toFixed(2)}
             </span>
-            <span className="block text-[11px] font-medium text-slate-400 dark:text-slate-500 mt-1">
+            <span className="block font-sans text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-1">
               per submission
             </span>
           </div>
         </div>
 
-        {/* Task Title */}
+        {/* Task Title (Explicit Hind Siliguri for Bengali with leading-[1.6] for matra clearance) */}
         <div className="space-y-2">
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-[#1E293B] dark:text-[#F1F5F9] leading-snug">
+          <h1
+            lang={isBengaliTitle ? 'bn' : 'en'}
+            className={`${
+              isBengaliTitle ? 'font-bengali' : 'font-sans'
+            } font-bold text-base sm:text-lg leading-[1.6] tracking-tight text-slate-900 dark:text-slate-100 break-words`}
+            style={isBengaliTitle ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+          >
             {task.title}
           </h1>
 
           {/* Meta Info */}
-          <div className="flex items-center flex-wrap gap-4 text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 pt-1">
+          <div className="flex items-center flex-wrap gap-4 font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 pt-1">
             <span className="flex items-center gap-1.5">
               <Users size={14} className="text-slate-400 dark:text-slate-500 shrink-0" />
               <span>{slotsLeft > 0 ? `${slotsLeft} of ${task.slots_total} spots left` : 'All spots filled'}</span>
@@ -267,22 +274,22 @@ export default function TaskDetail() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#E2E8F0] dark:border-[#2A3348]" />
+        <div className="border-t border-slate-200 dark:border-[#2A3348]" />
 
         {/* Description Section */}
         <div className="space-y-3">
-          <h2 className="text-sm font-bold text-[#1E293B] dark:text-[#F1F5F9] flex items-center gap-2">
+          <h2 className="font-sans font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <ClipboardList size={16} className="text-brand-primary shrink-0" />
-            <span>Task Instructions / বিবরণ</span>
+            <span style={{ fontFamily: "'Hind Siliguri', 'Inter', sans-serif" }}>Task Instructions / বিবরণ</span>
           </h2>
           <FormattedTaskText text={task.description} />
         </div>
 
         {/* Proof Required Section */}
-        <div className="rounded-xl bg-[#F8FAFC] dark:bg-[#1E293B]/70 border border-[#CBD5E1] dark:border-[#2A3348] p-4 sm:p-5 space-y-2.5">
-          <h3 className="text-sm font-bold text-[#1E293B] dark:text-[#F1F5F9] flex items-center gap-2">
+        <div className="rounded-xl bg-slate-50 dark:bg-[#1E293B]/70 border border-slate-200 dark:border-[#2A3348] p-4 sm:p-5 space-y-2.5">
+          <h3 className="font-sans font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <CheckCircle2 size={16} className="text-brand-primary shrink-0" />
-            <span>Proof Required / প্রমাণের নির্দেশাবলী</span>
+            <span style={{ fontFamily: "'Hind Siliguri', 'Inter', sans-serif" }}>Proof Required / প্রমাণের নির্দেশাবলী</span>
           </h3>
           <FormattedTaskText text={task.proof_instructions} />
         </div>
@@ -294,10 +301,10 @@ export default function TaskDetail() {
           <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
             <ClipboardList size={24} />
           </div>
-          <h2 className="text-base sm:text-lg font-display font-bold text-[#1E293B] dark:text-[#F1F5F9]">
+          <h2 className="font-sans font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100">
             {role === 'employer' ? 'Employer View Mode' : 'Admin Inspection Mode'}
           </h2>
-          <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 max-w-md mx-auto">
+          <p className="font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 max-w-md mx-auto">
             {role === 'employer'
               ? 'You are viewing this task in Employer mode. Only registered Workers are authorized to submit work proofs and earn rewards.'
               : 'You are viewing this task in Administrator audit mode. Task submissions are reserved exclusively for Workers.'}
@@ -305,66 +312,69 @@ export default function TaskDetail() {
           <div className="pt-2">
             <Link
               to={role === 'employer' ? '/employer' : '/admin'}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-emerald-600 transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2 font-sans text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 transition"
             >
               <span>Back to Dashboard</span>
             </Link>
           </div>
         </div>
       ) : done ? (
-        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 sm:p-8 flex flex-col items-center text-center gap-3 shadow-sm">
+        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-6 sm:p-8 flex flex-col items-center text-center gap-3 shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-brand-primary">
             <CheckCircle2 size={28} />
           </div>
-          <h2 className="text-lg font-bold text-[#1E293B] dark:text-[#F1F5F9]">Submission sent successfully!</h2>
-          <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 max-w-md">
+          <h2 className="font-sans font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100">
+            Submission sent successfully!
+          </h2>
+          <p className="font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 max-w-md">
             The employer will review your submitted proof. Your payment will be credited to your balance upon approval.
           </p>
           <Link
             to="/my-submissions"
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-emerald-600 transition mt-2"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-2.5 font-sans text-xs sm:text-sm font-semibold text-white shadow-md hover:bg-emerald-600 transition mt-2"
           >
             <span>View my submissions</span>
           </Link>
         </div>
       ) : alreadyApplied ? (
-        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 text-center text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 shadow-sm">
+        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-6 text-center font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 shadow-sm">
           You have already submitted proof for this task.{' '}
-          <Link to="/my-submissions" className="text-brand-primary font-bold hover:underline">
+          <Link to="/my-submissions" className="text-brand-primary font-semibold hover:underline">
             Check your submission status in My Submissions →
           </Link>
         </div>
       ) : isTaskClosed ? (
-        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 text-center text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 shadow-sm">
-          This task status is <span className="font-bold text-[#1E293B] dark:text-slate-200 capitalize">{task.status}</span>. It is no longer open for new submissions.
+        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-6 text-center font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 shadow-sm">
+          This task status is <span className="font-semibold text-slate-900 dark:text-slate-200 capitalize">{task.status}</span>. It is no longer open for new submissions.
         </div>
       ) : isFull ? (
-        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 text-center text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 shadow-sm">
+        <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-6 text-center font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 shadow-sm">
           This task is full — all available spots have been completed.
         </div>
       ) : (
         <form
           onSubmit={handleSubmit}
-          className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-6 sm:p-8 space-y-5 shadow-sm"
+          className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-6 sm:p-8 space-y-5 shadow-sm"
         >
           <div>
-            <h2 className="text-base sm:text-lg font-display font-bold text-[#1E293B] dark:text-[#F1F5F9] flex items-center gap-2">
+            <h2 className="font-sans font-semibold text-sm sm:text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Upload size={18} className="text-brand-primary shrink-0" />
               <span>Submit Your Proof</span>
             </h2>
-            <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">
+            <p className="font-sans font-normal text-xs sm:text-sm leading-[1.6] text-slate-600 dark:text-slate-400 mt-1">
               Follow the instructions above carefully to guarantee speedy approval.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+            <label className="block font-sans font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2">
               Proof Details / Text
             </label>
             <textarea
               required
               rows={4}
-              className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] p-3.5 text-xs sm:text-sm text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary leading-relaxed"
+              className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] p-3.5 font-sans font-normal text-xs sm:text-sm leading-[1.65] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+              style={{ fontFamily: "'Hind Siliguri', 'Inter', sans-serif" }}
               placeholder="Enter details about your work (username, profile link, transaction ID, comments, etc.)…"
               value={proofText}
               onChange={(e) => setProofText(e.target.value)}
@@ -389,7 +399,7 @@ export default function TaskDetail() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+            <label className="block font-sans font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2">
               Screenshot / Proof Image
             </label>
             <input
@@ -400,7 +410,7 @@ export default function TaskDetail() {
               onChange={handleFileChange}
             />
             {imagePreview ? (
-              <div className="relative rounded-xl overflow-hidden border border-[#CBD5E1] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B0F17] p-3">
+              <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-[#2A3348] bg-slate-50 dark:bg-[#0B0F17] p-3">
                 <img
                   src={imagePreview}
                   alt="Proof preview"
@@ -419,31 +429,31 @@ export default function TaskDetail() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed border-[#CBD5E1] dark:border-[#2A3348] hover:border-brand-primary bg-[#F8FAFC] dark:bg-[#0B0F17]/50 px-4 py-7 transition cursor-pointer"
+                className="flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed border-slate-200 dark:border-[#2A3348] hover:border-brand-primary bg-slate-50 dark:bg-[#0B0F17]/50 px-4 py-7 transition cursor-pointer"
               >
                 <Upload size={22} className="text-slate-400 dark:text-slate-500 mb-2" />
-                <span className="text-xs sm:text-sm font-semibold text-[#1E293B] dark:text-slate-300">
+                <span className="font-sans font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-200">
                   Click to upload screenshot
                 </span>
-                <span className="text-[11px] text-[#64748B] dark:text-slate-500 mt-1">
+                <span className="font-sans font-normal text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                   JPEG, PNG, WebP, or GIF — max 10 MB
                 </span>
               </button>
             )}
             {uploading && (
-              <p className="text-xs font-medium text-brand-primary mt-2 flex items-center gap-1.5">
+              <p className="font-sans font-medium text-xs text-brand-primary mt-2 flex items-center gap-1.5">
                 <Loader2 size={12} className="animate-spin" /> Uploading image…
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+            <label className="block font-sans font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2">
               Or paste a screenshot link / URL (optional)
             </label>
             <input
               type="url"
-              className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+              className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 font-sans font-normal text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
               placeholder="https://…"
               value={proofUrl}
               disabled={!!imageFile}
@@ -456,7 +466,7 @@ export default function TaskDetail() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-primary/20 hover:bg-emerald-600 transition"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary py-3.5 font-sans font-semibold text-xs sm:text-sm text-white shadow-md shadow-brand-primary/20 hover:bg-emerald-600 transition"
           >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             <span>{submitting ? 'Submitting proof…' : 'Submit proof for review'}</span>

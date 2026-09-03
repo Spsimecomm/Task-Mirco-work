@@ -27,7 +27,71 @@ export function AuthProvider({ children }) {
         .single()
       
       if (!error && data) {
-        setProfile(data)
+        // Strict worker referral verification & self-healing
+        if (data.role === 'worker') {
+          let needsUpdate = false
+          const updates = {}
+
+          // 1. Ensure worker has a persistent unique referral code stored in DB
+          if (!data.referral_code) {
+            const cleanPrefix = (data.full_name || 'WORK')
+              .replace(/[^a-zA-Z]/g, '')
+              .slice(0, 4)
+              .toUpperCase()
+              .padEnd(4, 'X')
+            const cleanDigits = (userId.replace(/[^0-9]/g, '').slice(0, 4) || '8021').padEnd(4, '0')
+            updates.referral_code = `${cleanPrefix}${cleanDigits}`
+            data.referral_code = updates.referral_code
+            needsUpdate = true
+          }
+
+          // 2. Ensure referred_by is linked if user registered through a referral link
+          if (!data.referred_by) {
+            try {
+              const { data: userData } = await supabase.auth.getUser()
+              const userMeta = userData?.user?.user_metadata || {}
+              let candidateRefCode =
+                userMeta.referral_code ||
+                userMeta.ref ||
+                userMeta.referred_by ||
+                null
+
+              if (!candidateRefCode && typeof window !== 'undefined') {
+                try {
+                  candidateRefCode = localStorage.getItem('taskly_ref_code')
+                } catch (e) {}
+              }
+
+              if (candidateRefCode && typeof candidateRefCode === 'string') {
+                const cleanRef = candidateRefCode.trim().toUpperCase()
+                const { data: referrer } = await supabase
+                  .from('profiles')
+                  .select('id')
+                  .eq('role', 'worker')
+                  .ilike('referral_code', cleanRef)
+                  .neq('id', userId)
+                  .maybeSingle()
+
+                if (referrer?.id) {
+                  updates.referred_by = referrer.id
+                  data.referred_by = referrer.id
+                  needsUpdate = true
+                  try {
+                    localStorage.removeItem('taskly_ref_code')
+                  } catch (e) {}
+                }
+              }
+            } catch (err) {
+              console.warn('Referral resolution note:', err)
+            }
+          }
+
+          if (needsUpdate) {
+            await supabase.from('profiles').update(updates).eq('id', userId)
+          }
+        }
+
+        setProfile({ ...data })
       } else {
         // Fallback: If trigger was delayed or profile row is missing, check auth user metadata
         const { data: userData } = await supabase.auth.getUser()
@@ -37,6 +101,36 @@ export function AuthProvider({ children }) {
           const cleanRole = ['worker', 'employer', 'admin'].includes(rawRole) ? rawRole : 'worker'
           const rawName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
           
+          let myRefCode = null
+          let myReferredById = null
+
+          if (cleanRole === 'worker') {
+            const cleanPrefix = rawName.replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase().padEnd(4, 'X')
+            const cleanDigits = (userId.replace(/[^0-9]/g, '').slice(0, 4) || '8021').padEnd(4, '0')
+            myRefCode = `${cleanPrefix}${cleanDigits}`
+
+            const candidateRef = (
+              user.user_metadata?.referral_code ||
+              user.user_metadata?.ref ||
+              (typeof window !== 'undefined' ? localStorage.getItem('taskly_ref_code') : null) ||
+              ''
+            ).trim().toUpperCase()
+
+            if (candidateRef) {
+              const { data: refProfile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('role', 'worker')
+                .ilike('referral_code', candidateRef)
+                .neq('id', userId)
+                .maybeSingle()
+
+              if (refProfile?.id) {
+                myReferredById = refProfile.id
+              }
+            }
+          }
+
           // Attempt upsert fallback
           const { data: newProfile } = await supabase
             .from('profiles')
@@ -44,6 +138,8 @@ export function AuthProvider({ children }) {
               id: userId,
               full_name: rawName,
               role: cleanRole,
+              referral_code: myRefCode,
+              referred_by: myReferredById,
             })
             .select()
             .single()
@@ -55,6 +151,8 @@ export function AuthProvider({ children }) {
               id: userId,
               full_name: rawName,
               role: cleanRole,
+              referral_code: myRefCode,
+              referred_by: myReferredById,
               earnings: 0,
               pending: 0,
               spent: 0,

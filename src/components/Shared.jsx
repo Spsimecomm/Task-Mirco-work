@@ -93,18 +93,32 @@ export function renderTextWithLinks(text) {
   })
 }
 
+export function hasBengaliText(str) {
+  if (!str || typeof str !== 'string') return false
+  return /[\u0980-\u09FF]/.test(str)
+}
+
 export function FormattedTaskText({ text, className = '' }) {
   if (!text) return null
 
   const lines = text.split('\n')
+  const isOverallBengali = hasBengaliText(text)
 
   return (
-    <div className={`space-y-2 text-sm leading-relaxed ${className}`}>
+    <div
+      lang={isOverallBengali ? 'bn' : 'en'}
+      className={`space-y-2.5 font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400 ${
+        isOverallBengali ? 'font-bengali' : 'font-sans'
+      } ${className}`}
+      style={isOverallBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+    >
       {lines.map((rawLine, idx) => {
         const trimmed = rawLine.trim()
         if (!trimmed) {
           return <div key={idx} className="h-1.5" />
         }
+
+        const isLineBengali = hasBengaliText(trimmed)
 
         // Clean redundant line emojis (keeping text clean so only main section heading has the primary icon)
         const cleanLine = trimmed.replace(/^[🔹🔸👉🎯📌🚀⭐✨➡️⚡📝💡✔️•\-*]+\s*/, '')
@@ -121,10 +135,23 @@ export function FormattedTaskText({ text, className = '' }) {
             heading = heading + ':'
           }
           const body = match[2].trim()
+          const isHeadingBengali = hasBengaliText(heading)
 
           return (
-            <p key={idx} className="text-slate-600 dark:text-slate-300 font-normal">
-              <strong className="font-semibold text-slate-900 dark:text-[#F1F5F9] mr-1.5">
+            <p
+              key={idx}
+              lang={isLineBengali ? 'bn' : 'en'}
+              className={`${
+                isLineBengali ? 'font-bengali' : 'font-sans'
+              } font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400`}
+              style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+            >
+              <strong
+                className={`${
+                  isHeadingBengali ? 'font-bengali' : 'font-sans'
+                } font-semibold text-slate-900 dark:text-slate-100 mr-1.5`}
+                style={isHeadingBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+              >
                 {heading}
               </strong>
               <span>{renderTextWithLinks(body)}</span>
@@ -137,9 +164,23 @@ export function FormattedTaskText({ text, className = '' }) {
         if (boldPrefixMatch) {
           const heading = boldPrefixMatch[1].replace(/\*\*/g, '').trim()
           const body = boldPrefixMatch[2].trim()
+          const isHeadingBengali = hasBengaliText(heading)
+
           return (
-            <p key={idx} className="text-slate-600 dark:text-slate-300 font-normal">
-              <strong className="font-semibold text-slate-900 dark:text-[#F1F5F9] mr-1.5">
+            <p
+              key={idx}
+              lang={isLineBengali ? 'bn' : 'en'}
+              className={`${
+                isLineBengali ? 'font-bengali' : 'font-sans'
+              } font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400`}
+              style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+            >
+              <strong
+                className={`${
+                  isHeadingBengali ? 'font-bengali' : 'font-sans'
+                } font-semibold text-slate-900 dark:text-slate-100 mr-1.5`}
+                style={isHeadingBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+              >
                 {heading}
               </strong>
               <span>{renderTextWithLinks(body)}</span>
@@ -148,7 +189,14 @@ export function FormattedTaskText({ text, className = '' }) {
         }
 
         return (
-          <p key={idx} className="text-slate-600 dark:text-slate-300 font-normal">
+          <p
+            key={idx}
+            lang={isLineBengali ? 'bn' : 'en'}
+            className={`${
+              isLineBengali ? 'font-bengali' : 'font-sans'
+            } font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400`}
+            style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+          >
             {renderTextWithLinks(cleanLine)}
           </p>
         )

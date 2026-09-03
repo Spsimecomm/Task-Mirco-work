@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -227,5 +229,17 @@
     color: #475569;
   }
 }
+
+@layer utilities {
+  .font-bengali,
+  [lang="bn"],
+  .bengali-text {
+    font-family: 'Hind Siliguri', 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
 
 

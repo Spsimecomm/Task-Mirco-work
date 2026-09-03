@@ -5,9 +5,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        poppins: ['"Poppins"', 'sans-serif'],
-        display: ['"Poppins"', '"Manrope"', 'sans-serif'],
-        body: ['"Inter"', '"Poppins"', 'sans-serif'],
+        sans: ['"Inter"', '"Hind Siliguri"', 'system-ui', '-apple-system', 'sans-serif'],
+        inter: ['"Inter"', '"Hind Siliguri"', 'sans-serif'],
+        poppins: ['"Poppins"', '"Hind Siliguri"', 'sans-serif'],
+        display: ['"Inter"', '"Hind Siliguri"', 'sans-serif'],
+        body: ['"Inter"', '"Hind Siliguri"', 'sans-serif'],
+        bengali: ['"Hind Siliguri"', '"Noto Sans Bengali"', 'sans-serif'],
       },
       colors: {
         // Design System Colors from Mockup

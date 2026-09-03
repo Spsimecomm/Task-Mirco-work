@@ -50,6 +50,20 @@ export default function Referrals() {
   const referralCode = profile?.referral_code || fallbackCode
   const referralLink = `${appDomain}/register?ref=${referralCode}`
 
+  // Ensure worker referral code is persisted in database immediately
+  useEffect(() => {
+    if (profile?.role === 'worker' && !profile?.referral_code && fallbackCode && supabase && user?.id) {
+      supabase
+        .from('profiles')
+        .update({ referral_code: fallbackCode })
+        .eq('id', user.id)
+        .then(() => {
+          if (profile) profile.referral_code = fallbackCode
+        })
+        .catch((e) => console.warn('Referral code sync warning:', e))
+    }
+  }, [profile, fallbackCode, user?.id])
+
   // Copy helpers
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink)
@@ -171,12 +185,6 @@ export default function Referrals() {
   )
   const totalReferralsCount = referredUsers.length
 
-  // Dynamically formatted rate strings for clean UI presentation
-  const numRate = parseFloat(referralRate)
-  const safeRate = isNaN(numRate) || numRate <= 0 ? 5 : numRate
-  const formattedRate = safeRate % 1 === 0 ? `${safeRate}%` : `${safeRate.toFixed(1)}%`
-  const formattedRateDecimal = `${safeRate.toFixed(1)}%`
-
   // Filter commissions
   const filteredCommissions = commissions.filter((c) => {
     const name = c.referred?.full_name?.toLowerCase() || ''
@@ -234,14 +242,14 @@ export default function Referrals() {
             <span>Refer & Earn</span>
           </h1>
           <p className="text-xs sm:text-sm font-normal text-[#475569] dark:text-slate-400 mt-1">
-            Invite friends to Taskly and earn <strong>{formattedRate} lifetime commission</strong> on their task earnings and deposits.
+            Invite friends to Taskly and earn <strong>{parseFloat(referralRate) || 5}% lifetime commission</strong> on their task earnings and deposits.
           </p>
         </div>
 
         {/* Commission Rate Badge */}
         <div className="inline-flex items-center gap-2 self-start sm:self-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 text-xs font-bold text-emerald-600 dark:text-brand-primary shadow-xs">
           <Sparkles size={14} />
-          <span>{formattedRate} Instant Lifetime Commission</span>
+          <span>{parseFloat(referralRate) || 5}% Instant Lifetime Commission</span>
         </div>
       </div>
 
@@ -358,7 +366,7 @@ export default function Referrals() {
         <StatCard
           icon={TrendingUp}
           label="Commission Rate"
-          value={formattedRateDecimal}
+          value="5.0%"
           tone="green"
           hint="On tasks & deposits"
         />
@@ -413,10 +421,10 @@ export default function Referrals() {
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
-                Get {formattedRate} instant payout
+                Get 5% instant payout
               </h4>
               <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1 leading-relaxed">
-                {formattedRate} commission is instantly added to your available earnings (Workers) or deposit balance (Employers).
+                5% commission is instantly added to your available earnings (Workers) or deposit balance (Employers).
               </p>
             </div>
           </div>
@@ -478,7 +486,7 @@ export default function Referrals() {
               <EmptyState
                 icon={Gift}
                 title="No commission records yet"
-                description={`Share your referral link with friends. When they get approved for tasks or make deposits, your ${formattedRate} commissions will appear here.`}
+                description="Share your referral link with friends. When they get approved for tasks or make deposits, your 5% commissions will appear here."
               />
             </div>
           ) : (
@@ -542,7 +550,7 @@ export default function Referrals() {
                         ${Number(c.eligible_amount || 0).toFixed(2)}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap font-semibold text-[#64748B] dark:text-slate-400">
-                        {c.commission_rate != null ? `${Number(c.commission_rate)}%` : formattedRate}
+                        {c.commission_rate || 5}%
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <span className="font-bold text-emerald-600 dark:text-brand-primary">
