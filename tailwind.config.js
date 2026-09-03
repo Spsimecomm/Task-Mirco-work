@@ -6,7 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Inter"', '"Hind Siliguri"', '"Noto Sans Bengali"', 'system-ui', '-apple-system', 'sans-serif'],
-        inter: ['"Inter"', '"Hind Siliguri"', '"Noto Sans Bengali"', 'system-serif'],
+        inter: ['"Inter"', '"Hind Siliguri"', '"Noto Sans Bengali"', 'system-ui', 'sans-serif'],
         poppins: ['"Poppins"', '"Hind Siliguri"', '"Noto Sans Bengali"', 'sans-serif'],
         display: ['"Inter"', '"Hind Siliguri"', '"Noto Sans Bengali"', 'sans-serif'],
         body: ['"Inter"', '"Hind Siliguri"', '"Noto Sans Bengali"', 'sans-serif'],
