@@ -39,7 +39,7 @@ export default function Topbar({ onOpenSidebar }) {
       : null
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-[#E2E8F0] dark:border-[#2A3348] bg-white/95 dark:bg-[#0B1020]/95 px-4 sm:px-6 lg:px-8 backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#E2E8F0] dark:border-[#2A3348] bg-white/95 dark:bg-[#0B1020]/95 px-4 sm:px-6 lg:px-8 backdrop-blur-md transition-colors">
       {/* Left section: Mobile menu trigger & Brand/Workspace indicator */}
       <div className="flex items-center gap-3">
         {/* Mobile menu trigger */}
