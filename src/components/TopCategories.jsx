@@ -14,8 +14,8 @@ export default function TopCategories({ categories = [] }) {
 
   return (
     <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-5 sm:p-6 shadow-sm transition-all">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display font-bold text-base text-[#1E293B] dark:text-[#F1F5F9]">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h3 className="font-display font-bold text-base text-[#1E293B] dark:text-[#F1F5F9] truncate">
           Top Categories
         </h3>
         <select
@@ -31,9 +31,9 @@ export default function TopCategories({ categories = [] }) {
       <div className="space-y-3.5">
         {items.map((cat) => (
           <div key={cat.name} className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-[#1E293B] dark:text-[#F1F5F9]">{cat.name}</span>
-              <span className="font-bold text-[#64748B] dark:text-slate-300 font-mono">
+            <div className="flex items-center justify-between text-xs gap-2">
+              <span className="font-medium text-[#1E293B] dark:text-[#F1F5F9] truncate">{cat.name}</span>
+              <span className="font-bold text-[#64748B] dark:text-slate-300 font-mono shrink-0">
                 ${Number(cat.amount).toFixed(2)}{' '}
                 <span className="text-[11px] font-normal text-slate-400">({cat.percent}%)</span>
               </span>

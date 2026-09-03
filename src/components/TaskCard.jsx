@@ -62,10 +62,10 @@ export default function TaskCard({ task }) {
         {/* Top: Category Badge & Reward */}
         <div className="flex items-center justify-between gap-2.5">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] sm:text-xs font-semibold border ${config.badge} tracking-wide shrink-0`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] sm:text-xs font-semibold border ${config.badge} tracking-wide shrink-0 min-w-0`}
           >
             <CategoryIcon size={13} className="shrink-0" />
-            <span className="truncate max-w-[120px] sm:max-w-none">{task.category || 'Micro Task'}</span>
+            <span className="truncate max-w-[120px] sm:max-w-[160px]">{task.category || 'Micro Task'}</span>
           </span>
 
           {/* Reward Chip */}
@@ -77,25 +77,25 @@ export default function TaskCard({ task }) {
           </div>
         </div>
 
-        {/* Task Title (Explicit Hind Siliguri for Bengali with leading-[1.6] for matra clearance) */}
+        {/* Task Title */}
         <h3
           lang={isBengaliTitle ? 'bn' : 'en'}
           className={`${
             isBengaliTitle ? 'font-bengali' : 'font-sans'
-          } font-bold text-base sm:text-lg leading-[1.6] tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 break-words`}
-          style={isBengaliTitle ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+          } font-bold text-base sm:text-lg leading-[1.5] sm:leading-[1.6] tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 break-words overflow-wrap-anywhere`}
+          style={isBengaliTitle ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
         >
           {task.title}
         </h3>
 
-        {/* Task Description (Explicit Hind Siliguri for Bengali with leading-[1.65] line height) */}
+        {/* Task Description */}
         {cleanDescription && (
           <p
             lang={isBengaliDesc ? 'bn' : 'en'}
             className={`${
               isBengaliDesc ? 'font-bengali' : 'font-sans'
-            } font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400 line-clamp-2 break-words`}
-            style={isBengaliDesc ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+            } font-normal text-xs sm:text-sm leading-[1.6] sm:leading-[1.65] text-slate-600 dark:text-slate-400 line-clamp-2 break-words overflow-wrap-anywhere`}
+            style={isBengaliDesc ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
           >
             {cleanDescription}
           </p>

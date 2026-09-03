@@ -362,7 +362,7 @@ export default function NotificationCenter() {
                           ? 'bg-white dark:bg-[#111827] hover:bg-slate-50/90 dark:hover:bg-slate-800/30'
                           : 'bg-emerald-500/[0.05] dark:bg-brand-primary/[0.08] hover:bg-emerald-500/[0.09] dark:hover:bg-brand-primary/[0.12] border-l-[3px] border-brand-primary'
                       }`}
-                      style={isBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+                      style={isBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
                     >
                       {/* Icon Badge */}
                       <div className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl ${style.bg} ${style.color}`}>

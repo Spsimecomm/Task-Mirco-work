@@ -84,11 +84,11 @@ export default function QuickActionsGrid({ role = 'worker' }) {
             <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${act.color} transition group-hover:scale-105`}>
               <act.icon size={22} />
             </div>
-            <div>
-              <p className="text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9] group-hover:text-emerald-600 dark:group-hover:text-brand-primary transition-colors">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9] group-hover:text-emerald-600 dark:group-hover:text-brand-primary transition-colors break-words">
                 {act.title}
               </p>
-              <p className="text-xs text-[#475569] dark:text-slate-400 font-normal mt-0.5 leading-relaxed">
+              <p className="text-xs text-[#475569] dark:text-slate-400 font-normal mt-0.5 leading-relaxed break-words">
                 {act.desc}
               </p>
             </div>

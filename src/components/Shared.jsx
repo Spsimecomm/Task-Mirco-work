@@ -110,7 +110,7 @@ export function FormattedTaskText({ text, className = '' }) {
       className={`space-y-2.5 font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400 ${
         isOverallBengali ? 'font-bengali' : 'font-sans'
       } ${className}`}
-      style={isOverallBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+      style={isOverallBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
     >
       {lines.map((rawLine, idx) => {
         const trimmed = rawLine.trim()
@@ -144,13 +144,13 @@ export function FormattedTaskText({ text, className = '' }) {
               className={`${
                 isLineBengali ? 'font-bengali' : 'font-sans'
               } font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400`}
-              style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+              style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
             >
               <strong
                 className={`${
                   isHeadingBengali ? 'font-bengali' : 'font-sans'
                 } font-semibold text-slate-900 dark:text-slate-100 mr-1.5`}
-                style={isHeadingBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+                style={isHeadingBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
               >
                 {heading}
               </strong>
@@ -173,13 +173,13 @@ export function FormattedTaskText({ text, className = '' }) {
               className={`${
                 isLineBengali ? 'font-bengali' : 'font-sans'
               } font-normal text-xs sm:text-sm leading-[1.65] text-slate-600 dark:text-slate-400`}
-              style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+              style={isLineBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
             >
               <strong
                 className={`${
                   isHeadingBengali ? 'font-bengali' : 'font-sans'
                 } font-semibold text-slate-900 dark:text-slate-100 mr-1.5`}
-                style={isHeadingBengali ? { fontFamily: "'Hind Siliguri', 'Inter', sans-serif" } : undefined}
+                style={isHeadingBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
               >
                 {heading}
               </strong>

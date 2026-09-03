@@ -38,8 +38,8 @@ export default function TaskDonutChart({
   return (
     <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-5 sm:p-6 shadow-sm transition-all flex flex-col justify-between">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-display font-bold text-base sm:text-lg text-[#1E293B] dark:text-[#F1F5F9]">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-display font-bold text-base sm:text-lg text-[#1E293B] dark:text-[#F1F5F9] truncate">
           Task Summary
         </h3>
         <select
@@ -101,17 +101,17 @@ export default function TaskDonutChart({
         </div>
 
         {/* Legend List */}
-        <div className="w-full sm:w-auto space-y-2.5 min-w-[140px]">
+        <div className="w-full sm:w-auto space-y-2.5 min-w-0">
           {segments.map((item) => {
             const pct = actualTotal > 0 ? Math.round((item.count / actualTotal) * 100) : 0
             return (
               <div key={item.key} className="flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="font-medium text-[#64748B] dark:text-slate-300">
+                  <span className="font-medium text-[#64748B] dark:text-slate-300 truncate">
                     {item.label}
                   </span>
                 </div>

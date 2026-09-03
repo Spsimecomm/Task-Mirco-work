@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -66,7 +64,7 @@
     color: var(--text-body);
     @apply font-body antialiased;
     background-attachment: fixed;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   html.light body {
     background-color: #F8FAFC;
@@ -76,12 +74,14 @@
   h1, h2, h3, h4, h5, h6 {
     color: var(--text-heading);
     @apply font-display;
+    transition: color 0.2s ease;
   }
   html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
     color: #0F172A;
   }
   p {
     color: var(--text-body);
+    transition: color 0.2s ease;
   }
   html.light p {
     color: #334155;
@@ -234,12 +234,34 @@
   .font-bengali,
   [lang="bn"],
   .bengali-text {
-    font-family: 'Hind Siliguri', 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'Inter', system-ui, -apple-system, sans-serif !important;
     font-feature-settings: "kern" 1, "liga" 1;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-subtle) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--border-subtle);
+    border-radius: 3px;
+  }
 }
-
-
-

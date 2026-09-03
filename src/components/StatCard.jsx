@@ -13,16 +13,16 @@ const tones = {
 
 export default function StatCard({ icon: Icon, label, value, tone = 'green', hint }) {
   return (
-    <div className="card p-5 sm:p-6 flex items-start justify-between rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] shadow-sm hover:border-brand-primary/50 dark:hover:border-[#2A3348] hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
-      <div>
-        <p className="text-[11px] uppercase tracking-wider text-[#64748B] dark:text-slate-400 font-bold">
+    <div className="card p-5 sm:p-6 flex items-start justify-between gap-3 rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] shadow-sm hover:border-brand-primary/50 dark:hover:border-[#2A3348] hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-wider text-[#64748B] dark:text-slate-400 font-bold truncate">
           {label}
         </p>
-        <p className="mt-1.5 text-2xl sm:text-3xl font-display font-extrabold text-[#1E293B] dark:text-[#F1F5F9] tracking-tight">
+        <p className="mt-1.5 text-2xl sm:text-3xl font-display font-extrabold text-[#1E293B] dark:text-[#F1F5F9] tracking-tight break-words">
           {value}
         </p>
         {hint && (
-          <p className="mt-1 text-xs font-normal text-[#64748B] dark:text-slate-400">
+          <p className="mt-1 text-xs font-normal text-[#64748B] dark:text-slate-400 break-words">
             {hint}
           </p>
         )}

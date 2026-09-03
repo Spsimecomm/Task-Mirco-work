@@ -58,9 +58,9 @@ export default function EarningsLineChart({ totalEarnings = 15.00, history = [] 
   return (
     <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-5 sm:p-6 shadow-sm transition-all">
       {/* Header with Title & Period Selector */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-display font-bold text-base sm:text-lg text-[#1E293B] dark:text-[#F1F5F9]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-display font-bold text-base sm:text-lg text-[#1E293B] dark:text-[#F1F5F9] truncate">
             Earnings Overview
           </h3>
           <div className="mt-1 flex items-baseline gap-2">
