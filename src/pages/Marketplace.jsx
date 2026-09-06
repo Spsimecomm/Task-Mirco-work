@@ -37,6 +37,11 @@ export default function Marketplace() {
   useEffect(() => {
     loadTasks()
 
+    const handleRefresh = () => {
+      loadTasks()
+    }
+    window.addEventListener('app:refresh', handleRefresh)
+
     const channel = supabase
       .channel('marketplace-tasks')
       .on(
@@ -57,6 +62,7 @@ export default function Marketplace() {
       .subscribe()
 
     return () => {
+      window.removeEventListener('app:refresh', handleRefresh)
       supabase.removeChannel(channel)
     }
   }, [loadTasks])

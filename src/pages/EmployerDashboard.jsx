@@ -48,7 +48,16 @@ export default function EmployerDashboard() {
   useEffect(() => {
     loadTasks()
 
-    if (!user) return undefined
+    const handleRefresh = () => {
+      loadTasks()
+    }
+    window.addEventListener('app:refresh', handleRefresh)
+
+    if (!user) {
+      return () => {
+        window.removeEventListener('app:refresh', handleRefresh)
+      }
+    }
 
     const channel = supabase
       .channel(`employer-tasks-${user.id}`)
@@ -65,6 +74,7 @@ export default function EmployerDashboard() {
       .subscribe()
 
     return () => {
+      window.removeEventListener('app:refresh', handleRefresh)
       supabase.removeChannel(channel)
     }
   }, [user, loadTasks])
@@ -81,11 +91,11 @@ export default function EmployerDashboard() {
       {/* Welcome Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#1E293B] dark:text-[#F1F5F9] tracking-tight flex items-center gap-2">
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-[#F1F5F9] tracking-tight flex items-center gap-2">
             <span>Welcome back, {displayName}</span>
             <span className="inline-block">👋</span>
           </h1>
-          <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 mt-1">
             Manage your campaigns, budgets and incoming proofs
           </p>
         </div>

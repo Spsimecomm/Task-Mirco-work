@@ -122,6 +122,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadAll()
+
+    const handleRefresh = () => {
+      loadAll()
+    }
+    window.addEventListener('app:refresh', handleRefresh)
+    return () => {
+      window.removeEventListener('app:refresh', handleRefresh)
+    }
   }, [loadAll])
 
   const handleApproveDeposit = async (id) => {
@@ -325,75 +333,75 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300 max-w-7xl mx-auto">
       <div>
-        <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#0F172A] dark:text-[#F1F5F9] tracking-tight">
+        <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-[#F1F5F9] tracking-tight">
           Admin Control Center
         </h1>
-        <p className="text-xs sm:text-sm font-normal text-[#475569] dark:text-slate-400 mt-1">
+        <p className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 mt-1">
           Manage deposits, withdrawals, users, broadcast notifications, and dynamic commission rates
         </p>
       </div>
 
       {/* 4 Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card p-5 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
           <div className="flex items-center gap-3.5">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-brand-primary">
               <DollarSign size={22} className="stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-display font-extrabold text-[#0F172A] dark:text-[#F1F5F9]">
+              <p className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 dark:text-[#F1F5F9]">
                 ${totalCommission.toFixed(2)}
               </p>
-              <p className="text-xs text-[#475569] dark:text-slate-400 font-medium">Platform revenue</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Platform revenue</p>
             </div>
           </div>
         </div>
 
-        <div className="card p-5 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
           <div className="flex items-center gap-3.5">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <ArrowDownToLine size={22} className="stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-display font-extrabold text-[#0F172A] dark:text-[#F1F5F9]">
+              <p className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 dark:text-[#F1F5F9]">
                 {pendingDeposits.length}
               </p>
-              <p className="text-xs text-[#475569] dark:text-slate-400 font-medium">Pending deposits</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Pending deposits</p>
             </div>
           </div>
         </div>
 
-        <div className="card p-5 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
           <div className="flex items-center gap-3.5">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <ArrowUpFromLine size={22} className="stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-display font-extrabold text-[#0F172A] dark:text-[#F1F5F9]">
+              <p className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 dark:text-[#F1F5F9]">
                 {pendingWithdrawals.length}
               </p>
-              <p className="text-xs text-[#475569] dark:text-slate-400 font-medium">Pending withdrawals</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Pending withdrawals</p>
             </div>
           </div>
         </div>
 
-        <div className="card p-5 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
+        <div className="card p-5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
           <div className="flex items-center gap-3.5">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
               <Users size={22} className="stroke-[2.5]" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-display font-extrabold text-[#0F172A] dark:text-[#F1F5F9]">
+              <p className="text-xl sm:text-2xl font-display font-extrabold text-slate-900 dark:text-[#F1F5F9]">
                 {users.length}
               </p>
-              <p className="text-xs text-[#475569] dark:text-slate-400 font-medium">Registered users</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Registered users</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs Row */}
-      <div className="flex gap-2 p-1.5 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl overflow-x-auto shadow-xs">
+      <div className="flex gap-2 p-1.5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl overflow-x-auto shadow-xs">
         {TABS.map((t) => {
           const isActive = tab === t.id
           return (
@@ -403,10 +411,10 @@ export default function AdminDashboard() {
                 setTab(t.id)
                 setError('')
               }}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition ${
+              className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
                 isActive
                   ? 'bg-brand-primary text-white shadow-xs'
-                  : 'text-[#475569] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <t.icon size={16} />
@@ -419,7 +427,7 @@ export default function AdminDashboard() {
       <ErrorBanner message={error} />
 
       {loading ? (
-        <div className="text-sm text-[#475569] dark:text-slate-400 py-16 text-center flex items-center justify-center gap-2">
+        <div className="text-sm text-slate-500 dark:text-slate-400 py-16 text-center flex items-center justify-center gap-2">
           <Loader2 size={18} className="animate-spin text-brand-primary" />
           <span>Loading…</span>
         </div>
@@ -435,18 +443,18 @@ export default function AdminDashboard() {
             deposits.map((d) => (
               <div
                 key={d.id}
-                className="card p-5 sm:p-6 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs"
+                className="card p-5 sm:p-6 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="font-bold text-base text-[#0F172A] dark:text-[#F1F5F9]">
+                    <p className="font-bold text-base text-slate-900 dark:text-[#F1F5F9]">
                       ${money(d.amount)} · <span className="uppercase text-brand-primary font-bold">{d.method}</span>
                     </p>
-                    <p className="text-xs text-[#475569] dark:text-slate-400">
-                      From Mobile: <span className="font-semibold text-[#0F172A] dark:text-slate-200">{d.sender_mobile}</span> · TrxID:{' '}
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      From Mobile: <span className="font-semibold text-slate-900 dark:text-slate-200">{d.sender_mobile}</span> · TrxID:{' '}
                       <span className="font-mono font-bold text-emerald-600 dark:text-brand-primary">{d.trx_id}</span>
                     </p>
-                    <p className="text-xs text-[#64748B] dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Requested on {new Date(d.created_at).toLocaleString()}
                     </p>
                     {d.rejection_reason && (
@@ -458,11 +466,11 @@ export default function AdminDashboard() {
                   <StatusBadge status={d.status} />
                 </div>
                 {d.status === 'pending' && (
-                  <div className="mt-4 pt-4 border-t border-[#E2E8F0] dark:border-[#2A3348]/60">
+                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-[#2A3348]/60">
                     {rejectingId === d.id ? (
                       <div className="space-y-2.5">
                         <input
-                          className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                          className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                           placeholder="Rejection reason…"
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
@@ -471,14 +479,14 @@ export default function AdminDashboard() {
                           <button
                             onClick={() => handleRejectDeposit(d.id)}
                             disabled={busyId === d.id}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition cursor-pointer"
                           >
                             {busyId === d.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
                             <span>Confirm Reject</span>
                           </button>
                           <button
                             onClick={() => setRejectingId(null)}
-                            className="px-4 py-2 rounded-xl text-xs font-bold border border-[#CBD5E1] dark:border-[#2A3348] text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                            className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-[#2A3348] text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -489,14 +497,14 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleApproveDeposit(d.id)}
                           disabled={busyId === d.id}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition cursor-pointer"
                         >
                           {busyId === d.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                           <span>Approve & Credit Balance</span>
                         </button>
                         <button
                           onClick={() => setRejectingId(d.id)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 transition"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 transition cursor-pointer"
                         >
                           <X size={14} /> <span>Reject</span>
                         </button>
@@ -520,32 +528,32 @@ export default function AdminDashboard() {
             withdrawals.map((w) => (
               <div
                 key={w.id}
-                className="card p-5 sm:p-6 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs"
+                className="card p-5 sm:p-6 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="font-bold text-base text-[#0F172A] dark:text-[#F1F5F9]">
+                    <p className="font-bold text-base text-slate-900 dark:text-[#F1F5F9]">
                       ${money(w.amount)} · <span className="uppercase text-brand-primary font-bold">{w.method}</span>
                     </p>
-                    <p className="text-xs text-[#475569] dark:text-slate-400">
-                      Destination Number: <span className="font-mono font-bold text-[#0F172A] dark:text-slate-200">{w.account_details}</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Destination Number: <span className="font-mono font-bold text-slate-900 dark:text-slate-200">{w.account_details}</span>
                     </p>
-                    <p className="text-xs text-[#475569] dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Fee: ${money(w.fee_amount)} · Worker receives:{' '}
                       <span className="font-bold text-emerald-600 dark:text-brand-primary">${money(w.net_amount ?? w.amount)}</span>
                     </p>
-                    <p className="text-xs text-[#64748B] dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Requested on {new Date(w.created_at).toLocaleString()}
                     </p>
                   </div>
                   <StatusBadge status={w.status} />
                 </div>
                 {w.status === 'pending' && (
-                  <div className="mt-4 pt-4 border-t border-[#E2E8F0] dark:border-[#2A3348]/60">
+                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-[#2A3348]/60">
                     {rejectingId === w.id ? (
                       <div className="space-y-2.5">
                         <input
-                          className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                          className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                           placeholder="Rejection reason…"
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
@@ -553,15 +561,15 @@ export default function AdminDashboard() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleRejectWithdrawal(w.id)}
-                            disabled={busyId === d.id}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition"
+                            disabled={busyId === w.id}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition cursor-pointer"
                           >
                             {busyId === w.id ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
                             <span>Confirm Reject</span>
                           </button>
                           <button
                             onClick={() => setRejectingId(null)}
-                            className="px-4 py-2 rounded-xl text-xs font-bold border border-[#CBD5E1] dark:border-[#2A3348] text-[#475569] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                            className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-[#2A3348] text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -572,14 +580,14 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleApproveWithdrawal(w.id)}
                           disabled={busyId === w.id}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition cursor-pointer"
                         >
                           {busyId === w.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                           <span>Mark as Paid & Completed</span>
                         </button>
                         <button
                           onClick={() => setRejectingId(w.id)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 transition"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 transition cursor-pointer"
                         >
                           <X size={14} /> <span>Reject</span>
                         </button>
@@ -602,10 +610,10 @@ export default function AdminDashboard() {
               <button
                 key={f.id}
                 onClick={() => setUserFilter(f.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                   userFilter === f.id
                     ? 'bg-brand-primary text-white border-brand-primary shadow-xs'
-                    : 'bg-white dark:bg-[#111827] border-[#E2E8F0] dark:border-[#2A3348] text-[#475569] dark:text-slate-300 hover:border-slate-400'
+                    : 'bg-white dark:bg-[#111827] border-slate-200 dark:border-[#2A3348] text-slate-500 dark:text-slate-300 hover:border-slate-400'
                 }`}
               >
                 {f.label}
@@ -613,18 +621,18 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          <div className="card divide-y divide-[#E2E8F0] dark:divide-[#2A3348]/60 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl overflow-hidden shadow-xs">
+          <div className="card divide-y divide-slate-200 dark:divide-[#2A3348]/60 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl overflow-hidden shadow-xs">
             {filteredUsers.length === 0 ? (
-              <p className="p-6 text-sm text-[#475569] dark:text-slate-400 text-center">No users match this filter.</p>
+              <p className="p-6 text-sm text-slate-500 dark:text-slate-400 text-center">No users match this filter.</p>
             ) : (
               filteredUsers.map((u) => (
                 <div key={u.id} className="flex items-center justify-between px-5 py-4 text-xs sm:text-sm hover:bg-slate-50 dark:hover:bg-[#1F2937]/30 transition">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-[#0F172A] dark:text-[#F1F5F9] font-bold">{u.full_name || 'Anonymous User'}</p>
-                      <span className="text-[11px] font-mono text-[#64748B] dark:text-slate-400">@{u.username || 'user'}</span>
+                      <p className="text-slate-900 dark:text-[#F1F5F9] font-bold">{u.full_name || 'Anonymous User'}</p>
+                      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">@{u.username || 'user'}</span>
                     </div>
-                    <p className="text-xs text-[#475569] dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {u.role === 'employer' ? (
                         <>Deposited: <span className="font-semibold text-emerald-600 dark:text-brand-primary">${money(u.deposited)}</span> · Reserved: ${money(u.pending)} · Spent: ${money(u.spent)}</>
                       ) : (
@@ -648,15 +656,15 @@ export default function AdminDashboard() {
             />
           ) : (
             <>
-              <div className="card p-5 sm:p-6 flex items-center gap-4 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
+              <div className="card p-5 sm:p-6 flex items-center gap-4 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-brand-primary font-bold">
                   <TrendingUp size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-display font-extrabold text-[#0F172A] dark:text-[#F1F5F9]">
+                  <p className="text-2xl font-display font-extrabold text-slate-900 dark:text-[#F1F5F9]">
                     ${totalCommission.toFixed(2)}
                   </p>
-                  <p className="text-xs sm:text-sm text-[#475569] dark:text-slate-400 font-medium">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
                     Total platform commission & processing fees ({totalEarningEntries} transactions)
                   </p>
                 </div>
@@ -664,13 +672,13 @@ export default function AdminDashboard() {
               {earnings.map((e) => (
                 <div
                   key={e.id}
-                  className="card p-5 flex items-center justify-between bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs"
+                  className="card p-5 flex items-center justify-between bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs"
                 >
                   <div>
-                    <p className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F1F5F9]">
                       Task commission · Task Reward: ${money(e.reward_amount)}
                     </p>
-                    <p className="text-xs text-[#475569] dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Commission ({numericValue(e.commission_rate).toFixed(0)}%): ${money(e.commission_amount)} ·{' '}
                       {new Date(e.created_at).toLocaleString()}
                     </p>
@@ -683,13 +691,13 @@ export default function AdminDashboard() {
               {withdrawalFees.map((e) => (
                 <div
                   key={e.id}
-                  className="card p-5 flex items-center justify-between bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs"
+                  className="card p-5 flex items-center justify-between bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs"
                 >
                   <div>
-                    <p className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F1F5F9]">
                       Withdrawal processing fee · Requested: ${money(e.withdrawal_amount)}
                     </p>
-                    <p className="text-xs text-[#475569] dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Fee ({numericValue(e.fee_rate).toFixed(0)}%): ${money(e.fee_amount)} ·{' '}
                       {new Date(e.created_at).toLocaleString()}
                     </p>
@@ -706,16 +714,16 @@ export default function AdminDashboard() {
         /* ================= BROADCAST NOTIFICATIONS TAB ================= */
         <div className="space-y-6">
           {/* Create Broadcast Notification Form Card */}
-          <div className="card p-6 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
-            <div className="flex items-center gap-3 pb-4 border-b border-[#E2E8F0] dark:border-[#2A3348]/60 mb-5">
+          <div className="card p-6 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-[#2A3348]/60 mb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary font-bold">
                 <Megaphone size={20} />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-display font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+                <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-[#F1F5F9]">
                   Send Broadcast Notification
                 </h2>
-                <p className="text-xs text-[#475569] dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Compose real-time global announcements or role-targeted alerts for all users
                 </p>
               </div>
@@ -732,7 +740,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Title */}
                 <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-[#0F172A] dark:text-slate-200">
+                  <label className="text-xs font-bold text-slate-900 dark:text-slate-200">
                     Notification Title <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -741,19 +749,19 @@ export default function AdminDashboard() {
                     placeholder="e.g. Special Weekend Bonus Campaign 🎉"
                     value={notifTitle}
                     onChange={(e) => setNotifTitle(e.target.value)}
-                    className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                    className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                   />
                 </div>
 
                 {/* Notification Type */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#0F172A] dark:text-slate-200">
+                  <label className="text-xs font-bold text-slate-900 dark:text-slate-200">
                     Notification Type
                   </label>
                   <select
                     value={notifType}
                     onChange={(e) => setNotifType(e.target.value)}
-                    className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                    className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                   >
                     <option value="announcement">📢 Global Announcement</option>
                     <option value="system">🛡️ System Update</option>
@@ -766,7 +774,7 @@ export default function AdminDashboard() {
 
               {/* Message Content */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#0F172A] dark:text-slate-200">
+                <label className="text-xs font-bold text-slate-900 dark:text-slate-200">
                   Message Content <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -775,14 +783,14 @@ export default function AdminDashboard() {
                   placeholder="Type the full message details for the notification..."
                   value={notifMessage}
                   onChange={(e) => setNotifMessage(e.target.value)}
-                  className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary leading-relaxed"
+                  className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary leading-relaxed"
                 />
               </div>
 
               {/* Target Audience Controls */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#0F172A] dark:text-slate-200">
+                  <label className="text-xs font-bold text-slate-900 dark:text-slate-200">
                     Target Audience
                   </label>
                   <div className="flex gap-2">
@@ -795,10 +803,10 @@ export default function AdminDashboard() {
                         type="button"
                         key={t.id}
                         onClick={() => setNotifTargetRole(t.id)}
-                        className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                        className={`flex-1 px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
                           notifTargetRole === t.id
                             ? 'bg-brand-primary text-white border-brand-primary shadow-xs'
-                            : 'bg-[#F8FAFC] dark:bg-[#0B0F17] border-[#E2E8F0] dark:border-[#2A3348] text-[#475569] dark:text-slate-300 hover:border-slate-400'
+                            : 'bg-slate-50 dark:bg-[#0B0F17] border-slate-200 dark:border-[#2A3348] text-slate-500 dark:text-slate-300 hover:border-slate-400'
                         }`}
                       >
                         {t.label}
@@ -808,14 +816,14 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#0F172A] dark:text-slate-200 flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-900 dark:text-slate-200 flex items-center justify-between">
                     <span>Optional Direct User Recipient</span>
-                    <span className="text-[10px] text-[#94A3B8] dark:text-slate-500">(Leave blank for broadcast)</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">(Leave blank for broadcast)</span>
                   </label>
                   <select
                     value={notifUserId}
                     onChange={(e) => setNotifUserId(e.target.value)}
-                    className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2 text-xs text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                    className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3.5 py-2 text-xs text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                   >
                     <option value="">-- Broadcast to All in Target Role --</option>
                     {users.map((u) => (
@@ -832,7 +840,7 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={sendingNotif}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
                   {sendingNotif ? (
                     <Loader2 size={16} className="animate-spin" />
@@ -848,12 +856,12 @@ export default function AdminDashboard() {
           {/* Broadcast History Table */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#F1F5F9]">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-[#F1F5F9]">
                 Broadcast History ({notifications.length})
               </h3>
               <button
                 onClick={loadAll}
-                className="flex items-center gap-1 text-xs text-brand-primary font-semibold hover:underline"
+                className="flex items-center gap-1 text-xs text-brand-primary font-semibold hover:underline cursor-pointer"
               >
                 <RefreshCw size={12} />
                 <span>Refresh</span>
@@ -871,24 +879,24 @@ export default function AdminDashboard() {
                 {notifications.map((n) => (
                   <div
                     key={n.id}
-                    className="card p-4 sm:p-5 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs flex items-start justify-between gap-4"
+                    className="card p-4 sm:p-5 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs flex items-start justify-between gap-4"
                   >
                     <div className="space-y-1.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-sm text-[#0F172A] dark:text-[#F1F5F9]">
+                        <span className="font-bold text-sm text-slate-900 dark:text-[#F1F5F9]">
                           {n.title}
                         </span>
                         <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                           {n.type}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-[#475569] dark:text-slate-300">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300">
                           Audience: {n.user_id ? 'Direct User' : n.target_role === 'all' ? 'All Users' : `${n.target_role}s`}
                         </span>
                       </div>
-                      <p className="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
+                      <p className="text-xs text-slate-500 dark:text-slate-300 leading-relaxed">
                         {n.message}
                       </p>
-                      <p className="text-[11px] text-[#94A3B8] dark:text-slate-500">
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
                         Broadcasted on {new Date(n.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -896,7 +904,7 @@ export default function AdminDashboard() {
                     <button
                       onClick={() => handleDeleteNotification(n.id)}
                       disabled={deletingNotifId === n.id}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition shrink-0"
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition shrink-0 cursor-pointer"
                       title="Delete notification"
                       aria-label="Delete notification"
                     >
@@ -915,16 +923,16 @@ export default function AdminDashboard() {
       ) : tab === 'settings' ? (
         /* ================= DYNAMIC COMMISSION & SYSTEM SETTINGS TAB ================= */
         <div className="space-y-6">
-          <div className="card p-6 bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] rounded-2xl shadow-xs">
-            <div className="flex items-center gap-3 pb-4 border-b border-[#E2E8F0] dark:border-[#2A3348]/60 mb-5">
+          <div className="card p-6 bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] rounded-2xl shadow-xs">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-[#2A3348]/60 mb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-brand-primary font-bold">
                 <Sliders size={20} />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-display font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+                <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-[#F1F5F9]">
                   Dynamic Commission Rates & Platform Settings
                 </h2>
-                <p className="text-xs text-[#475569] dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Update platform fee cuts and referral percentages dynamically stored in <span className="font-mono font-bold">system_settings</span>
                 </p>
               </div>
@@ -940,16 +948,16 @@ export default function AdminDashboard() {
             <form onSubmit={handleSaveSettings} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* 1. Referral Commission Rate */}
-                <div className="p-4 rounded-2xl border border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0E1526]/60 space-y-2.5">
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-[#2A3348] bg-slate-50 dark:bg-[#0E1526]/60 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#0F172A] dark:text-slate-200">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-200">
                       Referral Commission
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-brand-primary">
                       {referralRate}%
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#475569] dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Percentage awarded to the referrer whenever their referred user completes approved work or deposits.
                   </p>
                   <div className="flex items-center gap-2 pt-1">
@@ -962,7 +970,7 @@ export default function AdminDashboard() {
                         required
                         value={referralRate}
                         onChange={(e) => setReferralRate(e.target.value)}
-                        className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3 py-2 text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                        className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3 py-2 text-sm font-bold text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                       />
                       <Percent size={14} className="absolute right-3 top-3 text-slate-400" />
                     </div>
@@ -973,7 +981,7 @@ export default function AdminDashboard() {
                         type="button"
                         key={preset}
                         onClick={() => setReferralRate(preset)}
-                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#111827] text-[#475569] dark:text-slate-300 hover:border-brand-primary"
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] text-slate-500 dark:text-slate-300 hover:border-brand-primary cursor-pointer"
                       >
                         {preset}%
                       </button>
@@ -982,16 +990,16 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* 2. Platform Task Commission Rate */}
-                <div className="p-4 rounded-2xl border border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0E1526]/60 space-y-2.5">
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-[#2A3348] bg-slate-50 dark:bg-[#0E1526]/60 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#0F172A] dark:text-slate-200">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-200">
                       Platform Task Fee
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                       {platformRate}%
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#475569] dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Platform commission cut deducted from the task reward when an employer approves a submission.
                   </p>
                   <div className="flex items-center gap-2 pt-1">
@@ -1004,7 +1012,7 @@ export default function AdminDashboard() {
                         required
                         value={platformRate}
                         onChange={(e) => setPlatformRate(e.target.value)}
-                        className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3 py-2 text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                        className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3 py-2 text-sm font-bold text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                       />
                       <Percent size={14} className="absolute right-3 top-3 text-slate-400" />
                     </div>
@@ -1015,7 +1023,7 @@ export default function AdminDashboard() {
                         type="button"
                         key={preset}
                         onClick={() => setPlatformRate(preset)}
-                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#111827] text-[#475569] dark:text-slate-300 hover:border-brand-primary"
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] text-slate-500 dark:text-slate-300 hover:border-brand-primary cursor-pointer"
                       >
                         {preset}%
                       </button>
@@ -1024,16 +1032,16 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* 3. Withdrawal Processing Fee Rate */}
-                <div className="p-4 rounded-2xl border border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0E1526]/60 space-y-2.5">
+                <div className="p-4 rounded-2xl border border-slate-200 dark:border-[#2A3348] bg-slate-50 dark:bg-[#0E1526]/60 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#0F172A] dark:text-slate-200">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-200">
                       Withdrawal Fee Rate
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                       {withdrawalFeeRate}%
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#475569] dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Network processing fee deducted when workers withdraw earnings to bKash or Nagad.
                   </p>
                   <div className="flex items-center gap-2 pt-1">
@@ -1046,7 +1054,7 @@ export default function AdminDashboard() {
                         required
                         value={withdrawalFeeRate}
                         onChange={(e) => setWithdrawalFeeRate(e.target.value)}
-                        className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3 py-2 text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
+                        className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-3 py-2 text-sm font-bold text-slate-900 dark:text-[#F1F5F9] outline-none transition focus:border-brand-primary"
                       />
                       <Percent size={14} className="absolute right-3 top-3 text-slate-400" />
                     </div>
@@ -1057,7 +1065,7 @@ export default function AdminDashboard() {
                         type="button"
                         key={preset}
                         onClick={() => setWithdrawalFeeRate(preset)}
-                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#111827] text-[#475569] dark:text-slate-300 hover:border-brand-primary"
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] text-slate-500 dark:text-slate-300 hover:border-brand-primary cursor-pointer"
                       >
                         {preset}%
                       </button>
@@ -1071,50 +1079,50 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calculator size={18} className="text-brand-primary" />
-                    <h3 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F1F5F9]">
                       Live Commission Simulator
                     </h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#475569] dark:text-slate-400">Sample Task Reward: $</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Sample Task Reward: $</span>
                     <input
                       type="number"
                       step="1"
                       min="1"
                       value={simReward}
                       onChange={(e) => setSimReward(e.target.value)}
-                      className="w-20 rounded-lg border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-2 py-1 text-xs font-bold text-center text-[#0F172A] dark:text-[#F1F5F9]"
+                      className="w-20 rounded-lg border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-2 py-1 text-xs font-bold text-center text-slate-900 dark:text-[#F1F5F9]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348]">
-                    <p className="text-[10px] font-medium text-[#64748B] dark:text-slate-400 uppercase">Worker Receives</p>
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348]">
+                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase">Worker Receives</p>
                     <p className="text-base sm:text-lg font-bold text-emerald-600 dark:text-brand-primary mt-0.5">
                       ${simWorkerPay.toFixed(2)}
                     </p>
                     <p className="text-[10px] text-slate-400">{(100 - simPlatPct).toFixed(1)}% of reward</p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348]">
-                    <p className="text-[10px] font-medium text-[#64748B] dark:text-slate-400 uppercase">Platform Gross Fee</p>
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348]">
+                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase">Platform Gross Fee</p>
                     <p className="text-base sm:text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">
                       ${simPlatFee.toFixed(2)}
                     </p>
                     <p className="text-[10px] text-slate-400">{simPlatPct.toFixed(1)}% fee rate</p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348]">
-                    <p className="text-[10px] font-medium text-[#64748B] dark:text-slate-400 uppercase">Referrer Bonus</p>
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348]">
+                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase">Referrer Bonus</p>
                     <p className="text-base sm:text-lg font-bold text-purple-600 dark:text-purple-400 mt-0.5">
                       ${simRefBonus.toFixed(2)}
                     </p>
                     <p className="text-[10px] text-slate-400">{simRefPct.toFixed(1)}% referral rate</p>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348]">
-                    <p className="text-[10px] font-medium text-[#64748B] dark:text-slate-400 uppercase">Net Platform Profit</p>
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348]">
+                    <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase">Net Platform Profit</p>
                     <p className={`text-base sm:text-lg font-bold mt-0.5 ${simNetProfit >= 0 ? 'text-emerald-600 dark:text-brand-primary' : 'text-rose-600'}`}>
                       ${simNetProfit.toFixed(2)}
                     </p>
@@ -1128,7 +1136,7 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-brand-primary text-white hover:bg-emerald-600 shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
                   {savingSettings ? (
                     <Loader2 size={16} className="animate-spin" />

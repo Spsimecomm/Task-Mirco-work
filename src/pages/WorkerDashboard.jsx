@@ -73,7 +73,16 @@ export default function WorkerDashboard() {
   useEffect(() => {
     loadSubmissions()
 
-    if (!user) return undefined
+    const handleRefresh = () => {
+      loadSubmissions()
+    }
+    window.addEventListener('app:refresh', handleRefresh)
+
+    if (!user) {
+      return () => {
+        window.removeEventListener('app:refresh', handleRefresh)
+      }
+    }
 
     const channel = supabase
       .channel(`worker-submissions-${user.id}`)
@@ -90,6 +99,7 @@ export default function WorkerDashboard() {
       .subscribe()
 
     return () => {
+      window.removeEventListener('app:refresh', handleRefresh)
       supabase.removeChannel(channel)
     }
   }, [user, loadSubmissions])
@@ -113,17 +123,17 @@ export default function WorkerDashboard() {
       {/* 1. Top Welcome Header + Level Widget */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#1E293B] dark:text-[#F1F5F9] tracking-tight flex items-center gap-2">
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-[#F1F5F9] tracking-tight flex items-center gap-2">
             <span>Welcome back, {displayName}</span>
             <span className="inline-block animate-bounce">👋</span>
           </h1>
-          <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 mt-1">
             Here's your performance overview
           </p>
         </div>
 
         {/* Level Progression Card */}
-        <div className="flex items-center gap-4 rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] p-3.5 sm:px-5 sm:py-3.5 shadow-sm max-w-sm">
+        <div className="flex items-center gap-4 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-3.5 sm:px-5 sm:py-3.5 shadow-xs max-w-sm">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-brand-primary">
             <Shield size={22} className="stroke-[2.2]" />
           </div>
@@ -136,7 +146,7 @@ export default function WorkerDashboard() {
                 {levelTitle}
               </span>
             </div>
-            <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Complete more tasks to level up
             </p>
             <div className="mt-2 flex items-center gap-2">
@@ -146,7 +156,7 @@ export default function WorkerDashboard() {
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-[#1E293B] dark:text-slate-300 font-mono">
+              <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 font-mono">
                 {String(approvedCount).padStart(2, '0')}/{targetLevel}
               </span>
             </div>

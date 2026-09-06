@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronDown,
   ShieldCheck,
+  RotateCw,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -61,11 +62,21 @@ export default function Topbar({ onOpenSidebar }) {
       </div>
 
       {/* Right Section: Theme Toggle, Notifications, Balance Pill, User Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Quick Refresh Button (Triggers Facebook-style Pull-to-Refresh) */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('trigger:pulltorefresh'))}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#111827] text-[#0F172A] dark:text-slate-200 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition shadow-xs cursor-pointer"
+          title="Refresh Data (or pull down from top)"
+          aria-label="Refresh Data"
+        >
+          <RotateCw size={15} />
+        </button>
+
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#111827] text-[#0F172A] dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 transition shadow-xs"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#111827] text-[#0F172A] dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 transition shadow-xs cursor-pointer"
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           aria-label="Toggle theme"
         >

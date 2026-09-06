@@ -126,7 +126,13 @@ export default function NotificationCenter() {
       )
       .subscribe()
 
+    const handleRefresh = () => {
+      fetchNotifications()
+    }
+    window.addEventListener('app:refresh', handleRefresh)
+
     return () => {
+      window.removeEventListener('app:refresh', handleRefresh)
       supabase.removeChannel(channel)
     }
   }, [fetchNotifications, user])
@@ -216,7 +222,7 @@ export default function NotificationCenter() {
       <button
         id="notification-bell-btn"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#111827] text-slate-800 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 transition shadow-xs"
+        className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-[#2A3348] bg-slate-50 dark:bg-[#111827] text-slate-800 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 transition shadow-xs cursor-pointer"
         aria-label="View notifications"
         title="Notifications"
       >
@@ -236,20 +242,25 @@ export default function NotificationCenter() {
         <>
           {/* Backdrop on mobile screens to prevent background tap confusion */}
           <div
-            className="fixed inset-0 z-40 bg-slate-950/40 dark:bg-black/60 backdrop-blur-[2px] sm:hidden transition-opacity"
+            className="fixed inset-0 z-40 bg-slate-950/50 dark:bg-black/70 backdrop-blur-xs sm:hidden transition-opacity"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Panel Container: Full width on mobile bounded by inset-x-2.5, right-aligned dropdown on sm+ */}
+          {/* Panel Container: Mobile Bottom Sheet (full width, rounded top, max-h 85vh) & Desktop Dropdown (absolute right-0 w-96) */}
           <div
             id="notification-dropdown-panel"
-            className="fixed inset-x-2.5 top-[4.25rem] sm:top-full sm:inset-x-auto sm:right-0 sm:mt-2 sm:absolute z-50 w-auto sm:w-96 max-w-[calc(100vw-1.25rem)] sm:max-w-md rounded-2xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[34rem] animate-in fade-in zoom-in-95 sm:zoom-in-100 duration-150"
+            className="fixed inset-x-0 bottom-0 z-50 w-full sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem] sm:max-w-md rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[34rem] animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
           >
+            {/* Mobile Sheet Drag Indicator Bar */}
+            <div className="pt-2.5 pb-1 flex justify-center sm:hidden bg-slate-50/90 dark:bg-[#0E1526]/90 shrink-0">
+              <div className="h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
+            </div>
+
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-[#2A3348]/70 bg-slate-50/90 dark:bg-[#0E1526]/90 backdrop-blur-xs shrink-0">
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200 dark:border-[#2A3348]/70 bg-slate-50/90 dark:bg-[#0E1526]/90 backdrop-blur-xs shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="font-sans font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-slate-100 truncate">
+                <span className="font-sans font-bold text-xs sm:text-sm uppercase tracking-wider text-slate-900 dark:text-slate-100 truncate">
                   Notifications
                 </span>
                 {unreadCount > 0 ? (
@@ -269,7 +280,7 @@ export default function NotificationCenter() {
                     type="button"
                     onClick={handleMarkAllAsRead}
                     disabled={markingAll}
-                    className="inline-flex items-center gap-1 text-[11px] text-brand-primary font-bold hover:underline transition disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-[11px] text-brand-primary font-bold hover:underline transition disabled:opacity-50 cursor-pointer"
                   >
                     {markingAll ? (
                       <Loader2 size={12} className="animate-spin" />
@@ -281,11 +292,11 @@ export default function NotificationCenter() {
                   </button>
                 )}
 
-                {/* Mobile explicit close button */}
+                {/* Close button */}
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 sm:hidden transition"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
                   aria-label="Close notification panel"
                 >
                   <X size={16} />
@@ -294,11 +305,11 @@ export default function NotificationCenter() {
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-slate-200/80 dark:border-[#2A3348]/40 bg-white dark:bg-[#111827] shrink-0">
+            <div className="flex items-center gap-1.5 px-3 sm:px-4 py-2 border-b border-slate-200/80 dark:border-[#2A3348]/40 bg-white dark:bg-[#111827] shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveFilter('all')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
                   activeFilter === 'all'
                     ? 'bg-brand-primary text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -309,7 +320,7 @@ export default function NotificationCenter() {
               <button
                 type="button"
                 onClick={() => setActiveFilter('unread')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
                   activeFilter === 'unread'
                     ? 'bg-brand-primary text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -319,23 +330,23 @@ export default function NotificationCenter() {
               </button>
             </div>
 
-            {/* Notification Items List with Vertical Scrolling */}
+            {/* Notification Items List with Vertical Scrolling & Safe Boundaries */}
             <div className="flex-1 overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-[#2A3348]/50 min-h-0">
               {loading ? (
-                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
+                <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
                   <Loader2 size={15} className="animate-spin text-brand-primary" />
                   <span>Loading notifications…</span>
                 </div>
               ) : filteredNotifications.length === 0 ? (
-                <div className="py-10 px-4 text-center">
-                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-[#1F2937] text-slate-400 mb-2">
-                    <Bell size={18} />
+                <div className="py-12 px-4 text-center">
+                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 dark:bg-[#1F2937] text-slate-400 mb-2.5">
+                    <Bell size={20} />
                   </div>
-                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
                     {activeFilter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Announcements and updates will appear here.
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                    Announcements, job alerts, and commission updates will appear here.
                   </p>
                 </div>
               ) : (
@@ -345,7 +356,7 @@ export default function NotificationCenter() {
                   const IconComponent = style.icon
                   const isBengali = /[\u0980-\u09FF]/.test((notif.title || '') + ' ' + (notif.message || ''))
                   const isExpanded = expandedIds.has(notif.id)
-                  const isLongMessage = (notif.message || '').length > 100
+                  const isLongMessage = (notif.message || '').length > 110
 
                   return (
                     <div
@@ -358,6 +369,8 @@ export default function NotificationCenter() {
                         }
                       }}
                       className={`group relative flex items-start gap-3 p-3.5 sm:p-4 text-xs transition cursor-pointer ${
+                        isBengali ? 'font-bengali' : ''
+                      } ${
                         isRead
                           ? 'bg-white dark:bg-[#111827] hover:bg-slate-50/90 dark:hover:bg-slate-800/30'
                           : 'bg-emerald-500/[0.05] dark:bg-brand-primary/[0.08] hover:bg-emerald-500/[0.09] dark:hover:bg-brand-primary/[0.12] border-l-[3px] border-brand-primary'
@@ -365,15 +378,17 @@ export default function NotificationCenter() {
                       style={isBengali ? { fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Inter', sans-serif" } : undefined}
                     >
                       {/* Icon Badge */}
-                      <div className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl ${style.bg} ${style.color}`}>
+                      <div className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl ${style.bg} ${style.color} mt-0.5`}>
                         <IconComponent size={16} />
                       </div>
 
-                      {/* Content Container (guaranteed no horizontal overflow) */}
-                      <div className="flex-1 min-w-0 pr-1">
+                      {/* Content Container (strict no horizontal overflow with word-break) */}
+                      <div className="flex-1 min-w-0 pr-1 overflow-hidden">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <p
-                            className={`text-xs sm:text-sm font-sans font-bold leading-snug break-words ${
+                            className={`text-xs sm:text-sm font-bold leading-[1.5] break-words ${
+                              isBengali ? 'font-bengali leading-[1.6]' : 'font-sans'
+                            } ${
                               isRead
                                 ? 'text-slate-800 dark:text-slate-200 font-semibold'
                                 : 'text-slate-900 dark:text-white font-bold'
@@ -386,9 +401,11 @@ export default function NotificationCenter() {
                           </span>
                         </div>
 
-                        {/* Message body with full text wrapping & clearance */}
+                        {/* Message body with full text wrapping & matra clearance */}
                         <p
-                          className={`font-sans font-normal text-xs sm:text-[13px] leading-[1.65] text-slate-600 dark:text-slate-300 break-words whitespace-pre-wrap ${
+                          className={`font-normal text-xs sm:text-[13px] leading-[1.65] text-slate-600 dark:text-slate-300 break-words [overflow-wrap:anywhere] ${
+                            isBengali ? 'font-bengali leading-[1.7]' : 'font-sans'
+                          } ${
                             !isExpanded && isLongMessage ? 'line-clamp-2 sm:line-clamp-3' : ''
                           }`}
                         >
@@ -399,7 +416,7 @@ export default function NotificationCenter() {
                           <button
                             type="button"
                             onClick={(e) => toggleExpand(notif.id, e)}
-                            className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-brand-primary hover:underline mt-1 focus:outline-none"
+                            className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-brand-primary hover:underline mt-1 focus:outline-none cursor-pointer"
                           >
                             <span>{isExpanded ? 'Show less' : 'Read more'}</span>
                             {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -430,7 +447,7 @@ export default function NotificationCenter() {
                         <button
                           type="button"
                           onClick={(e) => handleMarkAsRead(notif.id, e)}
-                          className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-brand-primary dark:hover:text-brand-primary hover:bg-slate-100 dark:hover:bg-slate-800 opacity-70 sm:opacity-0 group-hover:opacity-100 transition"
+                          className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-brand-primary dark:hover:text-brand-primary hover:bg-slate-100 dark:hover:bg-slate-800 opacity-70 sm:opacity-0 group-hover:opacity-100 transition cursor-pointer"
                           title="Mark as read"
                           aria-label="Mark as read"
                         >

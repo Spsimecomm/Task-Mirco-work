@@ -231,17 +231,17 @@ export default function Referrals() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300 max-w-7xl mx-auto">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#0F172A] dark:text-[#F1F5F9] tracking-tight flex items-center gap-2.5">
+          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-[#F1F5F9] tracking-tight flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-primary/10 text-emerald-600 dark:text-brand-primary">
               <Gift size={22} />
             </span>
             <span>Refer & Earn</span>
           </h1>
-          <p className="text-xs sm:text-sm font-normal text-[#475569] dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 mt-1">
             Invite friends to Taskly and earn <strong>{parseFloat(referralRate) || 5}% lifetime commission</strong> on their task earnings and deposits.
           </p>
         </div>
@@ -254,7 +254,7 @@ export default function Referrals() {
       </div>
 
       {/* Referral Link & Code Action Card */}
-      <div className="rounded-3xl bg-gradient-to-br from-white via-white to-slate-50 dark:from-[#111827] dark:via-[#111827] dark:to-[#0B1020] border border-[#E2E8F0] dark:border-[#2A3348] p-6 sm:p-8 shadow-sm relative overflow-hidden">
+      <div className="rounded-3xl bg-gradient-to-br from-white via-white to-slate-50 dark:from-[#111827] dark:via-[#111827] dark:to-[#0B1020] border border-slate-200 dark:border-[#2A3348] p-6 sm:p-8 shadow-xs relative overflow-hidden">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-brand-primary/5 blur-3xl pointer-events-none" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
@@ -264,7 +264,7 @@ export default function Referrals() {
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-brand-primary">
                 Your Unique Invite Link
               </span>
-              <h2 className="font-display font-extrabold text-lg sm:text-xl text-[#0F172A] dark:text-[#F1F5F9] mt-0.5">
+              <h2 className="font-display font-extrabold text-lg sm:text-xl text-slate-900 dark:text-[#F1F5F9] mt-0.5">
                 Share with friends & start earning automatically
               </h2>
             </div>
@@ -276,14 +276,14 @@ export default function Referrals() {
                   type="text"
                   readOnly
                   value={referralLink}
-                  className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020] px-4 py-3 text-xs sm:text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9] outline-none select-all"
+                  className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020] px-4 py-3 text-xs sm:text-sm font-mono text-slate-900 dark:text-[#F1F5F9] outline-none select-all"
                 />
               </div>
               <button
                 id="copy-referral-link-btn"
                 type="button"
                 onClick={handleCopyLink}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-primary/20 hover:bg-emerald-600 active:scale-95 transition"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-xs shadow-brand-primary/20 hover:bg-emerald-600 active:scale-95 transition cursor-pointer"
               >
                 {copiedLink ? <Check size={16} /> : <Copy size={16} />}
                 <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
@@ -292,12 +292,12 @@ export default function Referrals() {
 
             {/* Social Share Buttons */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-xs text-[#64748B] dark:text-slate-400 mr-1 font-medium">Quick share:</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mr-1 font-medium">Quick share:</span>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] dark:border-[#2A3348] bg-white dark:bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-brand-primary transition"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-[#F1F5F9] hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-brand-primary transition"
               >
                 <MessageCircle size={14} className="text-emerald-500" />
                 <span>WhatsApp</span>
@@ -306,7 +306,7 @@ export default function Referrals() {
                 href={telegramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] dark:border-[#2A3348] bg-white dark:bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:border-blue-500 hover:text-blue-600 transition"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-[#F1F5F9] hover:border-blue-500 hover:text-blue-600 transition"
               >
                 <Send size={14} className="text-blue-500" />
                 <span>Telegram</span>
@@ -315,7 +315,7 @@ export default function Referrals() {
                 href={facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#E2E8F0] dark:border-[#2A3348] bg-white dark:bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:border-blue-600 hover:text-blue-600 transition"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#1E293B] px-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-[#F1F5F9] hover:border-blue-600 hover:text-blue-600 transition"
               >
                 <Facebook size={14} className="text-blue-600" />
                 <span>Facebook</span>
@@ -325,20 +325,20 @@ export default function Referrals() {
 
           {/* Right Column: Code Badge Box */}
           <div className="lg:col-span-4 flex flex-col items-center justify-center p-5 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 text-center">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 mb-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
               Your Referral Code
             </span>
             <div className="font-mono font-extrabold text-2xl tracking-wider text-emerald-600 dark:text-brand-primary my-1">
               {referralCode}
             </div>
-            <p className="text-[11px] text-[#64748B] dark:text-slate-400 mb-3">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
               Friends can type this code at registration
             </p>
             <button
               id="copy-referral-code-btn"
               type="button"
               onClick={handleCopyCode}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-white dark:bg-[#0B1020] px-4 py-2 text-xs font-bold text-emerald-600 dark:text-brand-primary shadow-xs hover:bg-emerald-500/10 transition"
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-white dark:bg-[#0B1020] px-4 py-2 text-xs font-bold text-emerald-600 dark:text-brand-primary shadow-xs hover:bg-emerald-500/10 transition cursor-pointer"
             >
               {copiedCode ? <Check size={14} /> : <Copy size={14} />}
               <span>{copiedCode ? 'Code Copied!' : 'Copy Code'}</span>
@@ -380,50 +380,50 @@ export default function Referrals() {
       </div>
 
       {/* How it Works Step Flow */}
-      <div className="rounded-2xl bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] p-6 shadow-xs">
-        <h3 className="font-display font-bold text-sm sm:text-base text-[#0F172A] dark:text-[#F1F5F9] mb-4 flex items-center gap-2">
+      <div className="rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] p-6 shadow-xs">
+        <h3 className="font-display font-bold text-sm sm:text-base text-slate-900 dark:text-[#F1F5F9] mb-4 flex items-center gap-2">
           <Info size={18} className="text-emerald-600 dark:text-brand-primary" />
           <span>How the Referral & Commission System Works</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-start gap-3.5 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0B1020] border border-[#E2E8F0]/60 dark:border-[#2A3348]/60">
+          <div className="flex items-start gap-3.5 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0B1020] border border-slate-200/60 dark:border-[#2A3348]/60">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-brand-primary font-display font-extrabold text-sm">
               1
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F1F5F9]">
                 Share your invite link
               </h4>
-              <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 Send your unique referral link or code to friends, workers, or business owners looking to hire.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0B1020] border border-[#E2E8F0]/60 dark:border-[#2A3348]/60">
+          <div className="flex items-start gap-3.5 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0B1020] border border-slate-200/60 dark:border-[#2A3348]/60">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-display font-extrabold text-sm">
               2
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F1F5F9]">
                 They complete tasks or deposit
               </h4>
-              <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 When a referred Worker’s submission is approved or an Employer’s deposit is verified.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0B1020] border border-[#E2E8F0]/60 dark:border-[#2A3348]/60">
+          <div className="flex items-start gap-3.5 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0B1020] border border-slate-200/60 dark:border-[#2A3348]/60">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-display font-extrabold text-sm">
               3
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[#F1F5F9]">
                 Get 5% instant payout
               </h4>
-              <p className="text-xs text-[#64748B] dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 5% commission is instantly added to your available earnings (Workers) or deposit balance (Employers).
               </p>
             </div>
@@ -432,18 +432,18 @@ export default function Referrals() {
       </div>
 
       {/* Main Table / Ledger Section */}
-      <div className="rounded-2xl bg-white dark:bg-[#111827] border border-[#E2E8F0] dark:border-[#2A3348] shadow-xs overflow-hidden">
+      <div className="rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] shadow-xs overflow-hidden">
         {/* Table Header Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-[#E2E8F0] dark:border-[#2A3348]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-slate-200 dark:border-[#2A3348]">
           {/* Tabs */}
-          <div className="flex items-center gap-2 bg-[#F1F5F9] dark:bg-[#0B1020] p-1 rounded-xl border border-[#CBD5E1] dark:border-[#2A3348]">
+          <div className="flex items-center gap-2 bg-[#F1F5F9] dark:bg-[#0B1020] p-1 rounded-xl border border-slate-200 dark:border-[#2A3348]">
             <button
               type="button"
               onClick={() => setActiveTab('commissions')}
-              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-bold transition ${
+              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
                 activeTab === 'commissions'
-                  ? 'bg-white dark:bg-[#1E293B] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
-                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-[#F1F5F9] shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Commission Ledger ({commissions.length})
@@ -451,10 +451,10 @@ export default function Referrals() {
             <button
               type="button"
               onClick={() => setActiveTab('members')}
-              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-bold transition ${
+              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-bold transition cursor-pointer ${
                 activeTab === 'members'
-                  ? 'bg-white dark:bg-[#1E293B] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
-                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-[#F1F5F9] shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               My Referrals ({referredUsers.length})
@@ -469,7 +469,7 @@ export default function Referrals() {
               placeholder={activeTab === 'commissions' ? 'Search commissions...' : 'Search members...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020] pl-10 pr-4 py-2 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9] placeholder-slate-400 outline-none transition focus:border-brand-primary"
+              className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020] pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] placeholder-slate-400 outline-none transition focus:border-brand-primary"
             />
           </div>
         </div>
@@ -478,7 +478,7 @@ export default function Referrals() {
         {activeTab === 'commissions' ? (
           /* Commissions Table */
           loading ? (
-            <div className="p-12 text-center text-xs text-[#64748B] dark:text-slate-400">
+            <div className="p-12 text-center text-xs text-slate-500 dark:text-slate-400">
               Loading commission records...
             </div>
           ) : filteredCommissions.length === 0 ? (
@@ -486,13 +486,13 @@ export default function Referrals() {
               <EmptyState
                 icon={Gift}
                 title="No commission records yet"
-                description="Share your referral link with friends. When they get approved for tasks or make deposits, your 5% commissions will appear here."
+                subtitle="Share your referral link with friends. When they get approved for tasks or make deposits, your 5% commissions will appear here."
               />
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="border-b border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020]/50 text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+                <thead className="border-b border-slate-200 dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020]/50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-5 py-3.5">Date</th>
                     <th className="px-5 py-3.5">Referred User</th>
@@ -503,13 +503,13 @@ export default function Referrals() {
                     <th className="px-5 py-3.5">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E2E8F0] dark:divide-[#2A3348]">
+                <tbody className="divide-y divide-slate-200/80 dark:divide-[#2A3348]">
                   {filteredCommissions.map((c) => (
                     <tr
                       key={c.id}
                       className="hover:bg-slate-50 dark:hover:bg-[#1E293B]/40 transition"
                     >
-                      <td className="px-5 py-4 whitespace-nowrap text-xs text-[#64748B] dark:text-slate-400">
+                      <td className="px-5 py-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                         {new Date(c.created_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -520,21 +520,21 @@ export default function Referrals() {
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-[#0F172A] dark:text-white">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white">
                             {c.referred?.full_name?.charAt(0) || 'U'}
                           </div>
                           <div>
-                            <p className="font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
+                            <p className="font-semibold text-slate-900 dark:text-[#F1F5F9]">
                               {c.referred?.full_name || 'Anonymous'}
                             </p>
-                            <span className="text-[10px] uppercase font-bold text-[#64748B] dark:text-slate-400">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
                               {c.referred?.role || 'worker'}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#0F172A] dark:text-slate-200">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-900 dark:text-slate-200">
                           {c.source_type === 'task_approval' ? (
                             <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-emerald-600 dark:text-brand-primary text-[11px] font-bold">
                               Task Approved
@@ -546,10 +546,10 @@ export default function Referrals() {
                           )}
                         </span>
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap font-medium text-[#475569] dark:text-slate-300">
+                      <td className="px-5 py-4 whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
                         ${Number(c.eligible_amount || 0).toFixed(2)}
                       </td>
-                      <td className="px-5 py-4 whitespace-nowrap font-semibold text-[#64748B] dark:text-slate-400">
+                      <td className="px-5 py-4 whitespace-nowrap font-semibold text-slate-500 dark:text-slate-400">
                         {c.commission_rate || 5}%
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap">
@@ -569,7 +569,7 @@ export default function Referrals() {
         ) : (
           /* Referred Members List */
           loading ? (
-            <div className="p-12 text-center text-xs text-[#64748B] dark:text-slate-400">
+            <div className="p-12 text-center text-xs text-slate-500 dark:text-slate-400">
               Loading referred team members...
             </div>
           ) : filteredMembers.length === 0 ? (
@@ -577,13 +577,13 @@ export default function Referrals() {
               <EmptyState
                 icon={Users}
                 title="No referred members yet"
-                description="Share your link above to invite friends, team members, or clients to Taskly."
+                subtitle="Share your link above to invite friends, team members, or clients to Taskly."
               />
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="border-b border-[#E2E8F0] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020]/50 text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+                <thead className="border-b border-slate-200 dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#0B1020]/50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <tr>
                     <th className="px-5 py-3.5">User</th>
                     <th className="px-5 py-3.5">Role</th>
@@ -592,7 +592,7 @@ export default function Referrals() {
                     <th className="px-5 py-3.5">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E2E8F0] dark:divide-[#2A3348]">
+                <tbody className="divide-y divide-slate-200/80 dark:divide-[#2A3348]">
                   {filteredMembers.map((m) => {
                     // Calculate total commissions generated by this user
                     const userCommissions = commissions.filter((c) => c.referred?.id === m.id)
@@ -612,10 +612,10 @@ export default function Referrals() {
                               {m.full_name?.charAt(0) || 'U'}
                             </div>
                             <div>
-                              <p className="font-bold text-[#0F172A] dark:text-[#F1F5F9]">
+                              <p className="font-bold text-slate-900 dark:text-[#F1F5F9]">
                                 {m.full_name || 'Taskly Member'}
                               </p>
-                              <span className="text-[11px] text-[#64748B] dark:text-slate-400">
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
                                 ID: {m.id.substring(0, 8)}...
                               </span>
                             </div>
@@ -632,7 +632,7 @@ export default function Referrals() {
                             {m.role || 'Worker'}
                           </span>
                         </td>
-                        <td className="px-5 py-4 whitespace-nowrap text-xs text-[#64748B] dark:text-slate-400">
+                        <td className="px-5 py-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                           {new Date(m.created_at).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',

@@ -100,10 +100,10 @@ export default function Deposit() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300 max-w-3xl mx-auto">
       <div>
-        <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#1E293B] dark:text-[#F1F5F9] tracking-tight">
+        <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-[#F1F5F9] tracking-tight">
           Deposit Funds
         </h1>
-        <p className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400 mt-1">
+        <p className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 mt-1">
           Current deposit balance:{' '}
           <span className="text-emerald-600 dark:text-brand-primary font-extrabold">
             ${Number(profile?.deposited ?? 0).toFixed(2)}
@@ -113,10 +113,10 @@ export default function Deposit() {
 
       <form
         onSubmit={handleSubmit}
-        className="card p-6 sm:p-8 space-y-5 rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] shadow-sm"
+        className="card p-6 sm:p-8 space-y-5 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] shadow-xs"
       >
         <div>
-          <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2">
             Payment Method
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -128,7 +128,7 @@ export default function Deposit() {
                 className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs sm:text-sm font-bold transition-all ${
                   method === m.id
                     ? m.activeClass
-                    : 'border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] text-[#64748B] dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'
+                    : 'border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] text-slate-600 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'
                 }`}
               >
                 <Smartphone size={16} />
@@ -138,37 +138,37 @@ export default function Deposit() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#1E293B]/60 p-4 space-y-2 text-xs sm:text-sm">
-          <p className="text-xs text-[#64748B] dark:text-slate-400">
+        <div className="rounded-xl border border-slate-200 dark:border-[#2A3348] bg-[#F8FAFC] dark:bg-[#1E293B]/60 p-4 space-y-2 text-xs sm:text-sm">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Send money to this official {method === 'bkash' ? 'bKash' : 'Nagad'} account:
           </p>
           <div className="flex items-center justify-between">
-            <span className="font-display font-extrabold text-base sm:text-lg text-[#1E293B] dark:text-[#F1F5F9] tracking-wider">
+            <span className="font-display font-extrabold text-base sm:text-lg text-slate-900 dark:text-[#F1F5F9] tracking-wider">
               {PAYMENT_NUMBERS[method]}
             </span>
             <button
               type="button"
               onClick={() => copyToClipboard(PAYMENT_NUMBERS[method])}
-              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-brand-primary hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-brand-primary hover:underline cursor-pointer"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               <span>{copied ? 'Copied' : 'Copy Number'}</span>
             </button>
           </div>
-          <p className="text-[11px] text-[#64748B] dark:text-slate-500">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
             Send Money (Personal / Merchant)
           </p>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2">
             Deposit Amount (USD)
           </label>
           <input
             type="number"
             min="1"
             step="0.01"
-            className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
             placeholder="Enter deposit amount in USD ($)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -176,12 +176,12 @@ export default function Deposit() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2">
             Your Sender Mobile Number
           </label>
           <input
             type="tel"
-            className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
             placeholder="01XXXXXXXXX"
             value={senderMobile}
             onChange={(e) => setSenderMobile(e.target.value)}
@@ -189,12 +189,12 @@ export default function Deposit() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#1E293B] dark:text-slate-200 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-2">
             Transaction ID (TrxID)
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-[#CBD5E1] dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm text-[#1E293B] dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary uppercase"
+            className="w-full rounded-xl border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#0B0F17] px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-[#F1F5F9] placeholder-slate-400 dark:placeholder-slate-500 outline-none transition focus:border-brand-primary focus:ring-1 focus:ring-brand-primary uppercase font-mono"
             placeholder="e.g. 9J3K92LLP1"
             value={trxId}
             onChange={(e) => setTrxId(e.target.value)}
@@ -212,20 +212,20 @@ export default function Deposit() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-primary/20 hover:bg-emerald-600 transition"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary py-3.5 text-xs sm:text-sm font-bold text-white shadow-xs shadow-brand-primary/20 hover:bg-emerald-600 transition cursor-pointer"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowDownToLine size={16} />}
           <span>Submit Deposit Request</span>
         </button>
-        <p className="text-xs text-[#64748B] dark:text-slate-400 text-center">
+        <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
           Send money to the number above, then enter the TrxID. Deposits are credited instantly after automated or admin check.
         </p>
       </form>
 
       {/* History */}
-      <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-[#CBD5E1] dark:border-[#2A3348] shadow-sm overflow-hidden">
-        <div className="px-5 sm:px-6 py-4 border-b border-[#CBD5E1] dark:border-[#2A3348]">
-          <h2 className="font-display font-bold text-base text-[#1E293B] dark:text-[#F1F5F9]">
+      <div className="card rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#2A3348] shadow-xs overflow-hidden">
+        <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-[#2A3348]">
+          <h2 className="font-display font-bold text-base text-slate-900 dark:text-[#F1F5F9]">
             Deposit History
           </h2>
         </div>
@@ -237,14 +237,14 @@ export default function Deposit() {
             />
           </div>
         ) : (
-          <ul className="divide-y divide-[#E2E8F0] dark:divide-[#2A3348]/60">
+          <ul className="divide-y divide-slate-200/80 dark:divide-[#2A3348]/60">
             {requests.map((r) => (
               <li key={r.id} className="flex items-center justify-between px-5 sm:px-6 py-3.5 text-xs sm:text-sm">
                 <div>
-                  <p className="text-[#1E293B] dark:text-[#F1F5F9] font-bold">
+                  <p className="text-slate-900 dark:text-[#F1F5F9] font-bold">
                     ${Number(r.amount).toFixed(2)} · {r.method === 'bkash' ? 'bKash' : 'Nagad'}
                   </p>
-                  <p className="text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     TrxID: <span className="font-mono">{r.trx_id}</span> ·{' '}
                     {new Date(r.created_at).toLocaleString(undefined, {
                       month: 'short',
