@@ -264,17 +264,17 @@ export default function NotificationCenter() {
       {/* Notifications Dropdown / Modal Panel */}
       {isOpen && (
         <>
-          {/* Backdrop on mobile screens */}
+          {/* Backdrop on mobile screens — z-[60] to escape the header's z-40 stacking context */}
           <div
-            className="fixed inset-0 z-40 bg-slate-950/50 dark:bg-black/70 backdrop-blur-xs sm:hidden transition-opacity"
+            className="fixed inset-0 z-[60] bg-slate-950/50 dark:bg-black/70 backdrop-blur-xs sm:hidden transition-opacity"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Panel Container: Mobile Bottom Sheet & Desktop Dropdown */}
+          {/* Panel Container: Mobile Top Dropdown (below header) & Desktop Dropdown */}
           <div
             id="notification-dropdown-panel"
-            className="fixed inset-x-0 bottom-0 z-50 w-full sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem] sm:max-w-md rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[34rem] animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+            className="fixed top-16 inset-x-0 z-[70] w-full sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem] sm:max-w-md rounded-b-3xl sm:rounded-2xl border-b sm:border border-t-0 sm:border-t border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-4rem)] sm:max-h-[34rem] animate-in fade-in slide-in-from-top-4 sm:slide-in-from-top-0 sm:zoom-in-95 duration-150"
           >
             {/* Mobile Sheet Drag Indicator Bar */}
             <div className="pt-2.5 pb-1 flex justify-center sm:hidden bg-slate-50/90 dark:bg-[#0E1526]/90 shrink-0">
