@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Bell,
   Check,
@@ -12,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  ExternalLink,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -29,6 +31,23 @@ function getNotificationIcon(type) {
     case 'system':
     default:
       return { icon: Info, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-500/10' }
+  }
+}
+
+// Default route to navigate to when a notification has no explicit action_url,
+// determined by notification type and user role.
+function getDefaultRoute(type, role) {
+  switch (type) {
+    case 'commission':
+      return '/referrals'
+    case 'reward':
+      return role === 'worker' ? '/my-submissions' : '/review-submissions'
+    case 'alert':
+      return role === 'employer' ? '/deposit' : role === 'worker' ? '/withdraw' : '/dashboard'
+    case 'announcement':
+    case 'system':
+    default:
+      return role === 'admin' ? '/admin' : role === 'employer' ? '/employer' : '/worker'
   }
 }
 
@@ -54,6 +73,7 @@ function timeAgo(dateString) {
 
 export default function NotificationCenter() {
   const { user, profile, role } = useAuth()
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState('all') // 'all' | 'unread'
   const [notifications, setNotifications] = useState([])
@@ -68,7 +88,6 @@ export default function NotificationCenter() {
     if (!user || !supabase) return
 
     try {
-      // 1. Fetch relevant notifications: directed to this user, or global broadcast for 'all' / user's role
       const userRole = role || profile?.role || 'worker'
       let query = supabase.from('notifications').select('*')
       if (typeof query.or === 'function') {
@@ -86,7 +105,6 @@ export default function NotificationCenter() {
         setNotifications(filtered)
       }
 
-      // 2. Fetch read receipts for this user
       const { data: readData, error: readErr } = await supabase
         .from('notification_reads')
         .select('notification_id')
@@ -107,7 +125,6 @@ export default function NotificationCenter() {
 
     if (!supabase || !user) return
 
-    // Realtime channel for instant notification broadcasts
     const channel = supabase
       .channel('public:notifications_realtime')
       .on(
@@ -161,7 +178,6 @@ export default function NotificationCenter() {
     }
   }, [isOpen])
 
-  // Toggle expanded state for long notification messages
   const toggleExpand = (notifId, e) => {
     if (e) e.stopPropagation()
     setExpandedIds((prev) => {
@@ -175,12 +191,10 @@ export default function NotificationCenter() {
     })
   }
 
-  // Mark single notification as read
   const handleMarkAsRead = async (notifId, e) => {
     if (e) e.stopPropagation()
     if (!user || readIds.has(notifId)) return
 
-    // Optimistic UI update
     setReadIds((prev) => new Set([...prev, notifId]))
 
     try {
@@ -191,12 +205,10 @@ export default function NotificationCenter() {
     }
   }
 
-  // Mark all notifications as read
   const handleMarkAllAsRead = async () => {
     if (!user || unreadCount === 0) return
     setMarkingAll(true)
 
-    // Optimistic update
     const allIds = new Set(notifications.map((n) => n.id))
     setReadIds(allIds)
 
@@ -207,6 +219,18 @@ export default function NotificationCenter() {
       fetchNotifications()
     } finally {
       setMarkingAll(false)
+    }
+  }
+
+  // Navigate to the notification's target page, falling back to a type/role default
+  const handleNotificationClick = (notif) => {
+    handleMarkAsRead(notif.id)
+    const target = notif.action_url || getDefaultRoute(notif.type, role || profile?.role)
+    if (target) {
+      setIsOpen(false)
+      navigate(target)
+    } else if ((notif.message || '').length > 110) {
+      toggleExpand(notif.id)
     }
   }
 
@@ -240,14 +264,14 @@ export default function NotificationCenter() {
       {/* Notifications Dropdown / Modal Panel */}
       {isOpen && (
         <>
-          {/* Backdrop on mobile screens to prevent background tap confusion */}
+          {/* Backdrop on mobile screens */}
           <div
             className="fixed inset-0 z-40 bg-slate-950/50 dark:bg-black/70 backdrop-blur-xs sm:hidden transition-opacity"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Panel Container: Mobile Bottom Sheet (full width, rounded top, max-h 85vh) & Desktop Dropdown (absolute right-0 w-96) */}
+          {/* Panel Container: Mobile Bottom Sheet & Desktop Dropdown */}
           <div
             id="notification-dropdown-panel"
             className="fixed inset-x-0 bottom-0 z-50 w-full sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[26rem] sm:max-w-md rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-[#2A3348] bg-white dark:bg-[#111827] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[34rem] animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
@@ -292,7 +316,6 @@ export default function NotificationCenter() {
                   </button>
                 )}
 
-                {/* Close button */}
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
@@ -330,7 +353,7 @@ export default function NotificationCenter() {
               </button>
             </div>
 
-            {/* Notification Items List with Vertical Scrolling & Safe Boundaries */}
+            {/* Notification Items List */}
             <div className="flex-1 overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-[#2A3348]/50 min-h-0">
               {loading ? (
                 <div className="py-12 text-center text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
@@ -357,18 +380,22 @@ export default function NotificationCenter() {
                   const isBengali = /[\u0980-\u09FF]/.test((notif.title || '') + ' ' + (notif.message || ''))
                   const isExpanded = expandedIds.has(notif.id)
                   const isLongMessage = (notif.message || '').length > 110
+                  const hasTarget = !!(notif.action_url || getDefaultRoute(notif.type, role || profile?.role))
 
                   return (
                     <div
                       key={notif.id}
                       lang={isBengali ? 'bn' : 'en'}
-                      onClick={() => {
-                        handleMarkAsRead(notif.id)
-                        if (isLongMessage) {
-                          toggleExpand(notif.id)
+                      onClick={() => handleNotificationClick(notif)}
+                      role={hasTarget ? 'button' : undefined}
+                      tabIndex={hasTarget ? 0 : undefined}
+                      onKeyDown={(e) => {
+                        if (hasTarget && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault()
+                          handleNotificationClick(notif)
                         }
                       }}
-                      className={`group relative flex items-start gap-3 p-3.5 sm:p-4 text-xs transition cursor-pointer ${
+                      className={`group relative flex items-start gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-3.5 sm:py-4 text-xs transition cursor-pointer ${
                         isBengali ? 'font-bengali' : ''
                       } ${
                         isRead
@@ -382,11 +409,12 @@ export default function NotificationCenter() {
                         <IconComponent size={16} />
                       </div>
 
-                      {/* Content Container (strict no horizontal overflow with word-break) */}
-                      <div className="flex-1 min-w-0 pr-1 overflow-hidden">
+                      {/* Content Container */}
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        {/* Title row */}
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <p
-                            className={`text-xs sm:text-sm font-bold leading-[1.5] break-words ${
+                            className={`text-xs sm:text-sm font-bold leading-[1.5] break-words [overflow-wrap:anywhere] ${
                               isBengali ? 'font-bengali leading-[1.6]' : 'font-sans'
                             } ${
                               isRead
@@ -401,7 +429,7 @@ export default function NotificationCenter() {
                           </span>
                         </div>
 
-                        {/* Message body with full text wrapping & matra clearance */}
+                        {/* Message body */}
                         <p
                           className={`font-normal text-xs sm:text-[13px] leading-[1.65] text-slate-600 dark:text-slate-300 break-words [overflow-wrap:anywhere] ${
                             isBengali ? 'font-bengali leading-[1.7]' : 'font-sans'
@@ -416,7 +444,7 @@ export default function NotificationCenter() {
                           <button
                             type="button"
                             onClick={(e) => toggleExpand(notif.id, e)}
-                            className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-brand-primary hover:underline mt-1 focus:outline-none cursor-pointer"
+                            className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-brand-primary hover:underline mt-1.5 focus:outline-none cursor-pointer"
                           >
                             <span>{isExpanded ? 'Show less' : 'Read more'}</span>
                             {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -431,6 +459,12 @@ export default function NotificationCenter() {
                           {notif.target_role && notif.target_role !== 'all' && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                               {notif.target_role}s
+                            </span>
+                          )}
+                          {hasTarget && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-brand-primary/70 dark:text-brand-primary/60">
+                              <ExternalLink size={9} />
+                              <span>Tap to open</span>
                             </span>
                           )}
                           {!isRead && (
@@ -472,4 +506,3 @@ export default function NotificationCenter() {
     </div>
   )
 }
-
