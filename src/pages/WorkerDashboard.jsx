@@ -23,6 +23,7 @@ import { ErrorBanner } from '../components/Shared'
 export default function WorkerDashboard() {
   const { user, profile } = useAuth()
   const [submissions, setSubmissions] = useState([])
+  const [withdrawals, setWithdrawals] = useState([])
   const [stats, setStats] = useState({
     completed: 0,
     pending: 0,
@@ -37,18 +38,27 @@ export default function WorkerDashboard() {
     setLoading(true)
     setError('')
     try {
-      const { data, error: fetchErr } = await supabase
-        .from('submissions')
-        .select('id, status, created_at, proof_text, tasks ( id, title, reward, category )')
-        .eq('worker_id', user.id)
-        .order('created_at', { ascending: false })
+      const [subRes, wdlRes] = await Promise.all([
+        supabase
+          .from('submissions')
+          .select('id, status, created_at, proof_text, tasks ( id, title, reward, category )')
+          .eq('worker_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('withdrawals')
+          .select('id, status, amount, method, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+      ])
 
-      if (fetchErr) throw fetchErr
+      if (subRes.error) throw subRes.error
+      if (wdlRes.error) throw wdlRes.error
 
-      const list = data || []
+      const list = subRes.data || []
+      const wdlList = wdlRes.data || []
       setSubmissions(list)
+      setWithdrawals(wdlList)
 
-      // Calculate submission statistics
       const counts = {
         completed: list.filter((s) => s.status === 'approved').length,
         pending: list.filter((s) => s.status === 'pending').length,
@@ -56,15 +66,10 @@ export default function WorkerDashboard() {
         rejected: list.filter((s) => s.status === 'rejected').length,
       }
 
-      // Default to at least realistic demo numbers if fresh user with zero items
-      if (list.length === 0) {
-        setStats({ completed: 5, pending: 0, approved: 0, rejected: 0 })
-      } else {
-        setStats(counts)
-      }
+      setStats(counts)
     } catch (err) {
-      console.error('Error fetching worker submissions:', err)
-      setError(err.message || 'Failed to load your submissions from database. Please try again.')
+      console.error('Error fetching worker data:', err)
+      setError(err.message || 'Failed to load your data from database. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -96,6 +101,16 @@ export default function WorkerDashboard() {
         { event: 'UPDATE', schema: 'public', table: 'submissions', filter: `worker_id=eq.${user.id}` },
         () => loadSubmissions()
       )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${user.id}` },
+        () => loadSubmissions()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${user.id}` },
+        () => loadSubmissions()
+      )
       .subscribe()
 
     return () => {
@@ -111,7 +126,7 @@ export default function WorkerDashboard() {
   const totalBalance = earnings
 
   // Level Progression Calculation
-  const approvedCount = stats.completed || 6
+  const approvedCount = stats.completed
   const targetLevel = 10
   const progressPercent = Math.min(100, Math.round((approvedCount / targetLevel) * 100))
   const levelTitle = approvedCount >= 20 ? 'Gold Worker' : approvedCount >= 10 ? 'Silver Worker' : 'Newbie'
@@ -224,7 +239,7 @@ export default function WorkerDashboard() {
 
         {/* Right Column: Recent Activity Timeline */}
         <div className="lg:col-span-5">
-          <RecentActivityTimeline submissions={submissions} />
+          <RecentActivityTimeline submissions={submissions} withdrawals={withdrawals} />
         </div>
       </div>
     </div>
