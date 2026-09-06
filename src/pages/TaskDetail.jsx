@@ -89,6 +89,12 @@ export default function TaskDetail() {
     load()
   }, [load])
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview)
+    }
+  }, [imagePreview])
+
   const MAX_FILE_SIZE = 10 * 1024 * 1024
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
